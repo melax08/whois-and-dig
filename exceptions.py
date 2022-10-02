@@ -1,0 +1,2 @@
+class BadDomain(Exception):
+    pass
