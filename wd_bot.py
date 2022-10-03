@@ -3,13 +3,16 @@ import subprocess
 import datetime
 import re
 import idna
+import logging
 
+from logging.handlers import RotatingFileHandler
 from telegram.ext import CommandHandler, Updater, MessageHandler, Filters
 
 import whois
 
 from dotenv import load_dotenv
 
+import messages
 from exceptions import BadDomain
 
 load_dotenv()
@@ -20,10 +23,19 @@ DNS_SERVERS = ("8.8.8.8 1.1.1.1 ns1.hostiman.ru "
 ALLOWRD_RECORDS = ('TXT', 'A', 'MX', 'CNAME', 'AAAA', 'SOA', 'DNAME',
                    'DS', 'NS', 'SRV', 'PTR', 'CAA', 'TLSA')
 
-# Length of width between key and value
+# Length of width between key and value in whois
 LJ_VALUE = 20
 
 updater = Updater(token=TOKEN)
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+handler = RotatingFileHandler('wd_bot.log', maxBytes=50000000, backupCount=5)
+logger.addHandler(handler)
+formatter = logging.Formatter(
+    '%(asctime)s - %(levelname)s - %(message)s'
+)
+handler.setFormatter(formatter)
 
 
 def send_message(message, context, chat):
@@ -40,21 +52,28 @@ def who(domain_name):
     domain = whois.query(domain_name)
     if domain:
         whois_information = '🔍 Here is whois information:'
-        whois_information += '\nDomain: '.ljust(LJ_VALUE) + idna.decode(domain.name)
+        whois_information += ('\nDomain: '.ljust(LJ_VALUE)
+                              + idna.decode(domain.name))
         for dom in domain.name_servers:
             whois_information += '\nNserver: '.ljust(LJ_VALUE) + dom
         if domain.registrar:
-            whois_information += '\nRegistrar: '.ljust(LJ_VALUE) + domain.registrar
+            whois_information += ('\nRegistrar: '.ljust(LJ_VALUE)
+                                  + domain.registrar)
         if domain.creation_date:
-            whois_information += '\nCreated: '.ljust(LJ_VALUE) + str(domain.creation_date)
+            whois_information += ('\nCreated: '.ljust(LJ_VALUE)
+                                  + str(domain.creation_date))
         if domain.expiration_date:
             if datetime.datetime.utcnow() < domain.expiration_date:
-                whois_information += '\nExpires: '.ljust(LJ_VALUE) + str(domain.expiration_date) + ' - active!'
+                whois_information += ('\nExpires: '.ljust(LJ_VALUE)
+                                      + str(domain.expiration_date)
+                                      + ' - active!')
             else:
-                whois_information += '\nExpires: '.ljust(LJ_VALUE) + str(domain.expiration_date) + '<b> - EXPIRED! 🛑</b>'
+                whois_information += ('\nExpires: '.ljust(LJ_VALUE)
+                                      + str(domain.expiration_date)
+                                      + '<b> - EXPIRED! 🛑</b>')
         return whois_information
     else:
-        return 'Domain is not registred!'
+        return messages.domain_not_registred
 
 
 def domain_fixer(raw_domain):
@@ -66,7 +85,7 @@ def domain_fixer(raw_domain):
         fixed_domain = idna.encode(fixed_domain).decode()
         return fixed_domain
     else:
-        raise BadDomain('❗ Bad domain. Maybe you need some /help?')
+        raise BadDomain(messages.bad_domain)
 
 
 def di(domain_name, record_type):
@@ -91,7 +110,8 @@ def di(domain_name, record_type):
 def main(update, context):
     """Main function for telegram message handler."""
     chat = update.effective_chat
-    input_message = update.message.text.split()
+    info = update.message
+    input_message = info.text.split()
     domain = ''
     record_type = ''
     if len(input_message) == 2:
@@ -104,64 +124,59 @@ def main(update, context):
         try:
             domain = domain_fixer(domain)
         except BadDomain as error:
+            logger.debug(messages.error_log.format(
+                info.chat.username,
+                input_message,
+                'Bad domain'))
             send_message(str(error), context, chat)
         else:
             try:
                 whois_output = who(domain)
                 send_message(whois_output, context, chat)
-            except whois.exceptions.UnknownTld:
-                send_message(
-                    "❗ I don't know this second-level domain, but let's try some DIG 🌚",
-                    context,
-                    chat
-                )
+            except whois.exceptions.UnknownTld as error:
+                logger.debug(messages.error_log.format(
+                    info.chat.username,
+                    input_message,
+                    error))
+                send_message(messages.unknown_tld, context, chat)
             except whois.exceptions.WhoisPrivateRegistry as error:
+                logger.debug(messages.error_log.format(
+                    info.chat.username,
+                    input_message,
+                    error))
                 message = '❗ ' + str(error) + '. Trying to dig...'
                 send_message(message, context, chat)
+            except Exception as error:
+                logger.error(messages.new_exception.format(
+                    info.chat.username,
+                    input_message,
+                    error))
             finally:
                 dig_output = di(domain, record_type)
                 send_message(dig_output, context, chat)
     else:
-        message = ('❗ You send the wrong request. Maybe you need some /help?')
-        send_message(message, context, chat)
+        send_message(messages.wrong_request, context, chat)
 
 
 def command_help(update, context):
     """Send help information with telegram command handler."""
     chat = update.effective_chat
-    help_text = ('You can send messages like: example.com MX\n'
-                 'Instead of example.com you need to specify domain name, that you want to check.\n'
-                 'Instead of MX you need to specify the record type (A, TXT, MX, etc)\n'
-                 'if you you will not specify the record type, or specify the wrong record name, the record type will set to "A".\n\n'
-                 'Examples:\n\n'
-                 '✅ Correct:\n'
-                 'example.ru TXT\nhttp://example.com A\nsite.ru\n\n'
-                 '❌ Wrong:\n'
-                 'A site.com\nexample.ru A MX TXT')
-    context.bot.send_message(chat_id=chat.id, text=help_text)
+    info = update.message
+    if info.text == '/start':
+        logger.info(
+            f'Someone starts bot: {info.chat.username}, '
+            f'{info.chat.first_name} {info.chat.last_name}, {chat.id}')
+    context.bot.send_message(chat_id=chat.id, text=messages.help_text)
 
 
 def run_telegram_pooling():
     """Telegram create handlers and pooling."""
+    logger.info('Start pooling')
     updater.dispatcher.add_handler(CommandHandler('start', command_help))
     updater.dispatcher.add_handler(CommandHandler('help', command_help))
     updater.dispatcher.add_handler(MessageHandler(Filters.text, main))
     updater.start_polling()
     updater.idle()
-
-
-def test_message():
-    """Test function, don't use it in production."""
-    from telegram import Bot
-    bot = Bot(token=TOKEN)
-    chat_id = '159956275'
-    # text = di('google.com', 'MX')
-    text = who('google.com')
-    print(text)
-    bot.send_message(chat_id,
-                     text,
-                     disable_web_page_preview=True,
-                     parse_mode='HTML')
 
 
 if __name__ == '__main__':
