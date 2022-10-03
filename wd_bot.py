@@ -30,7 +30,9 @@ updater = Updater(token=TOKEN)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-handler = RotatingFileHandler('wd_bot.log', maxBytes=50000000, backupCount=5)
+log_file = 'wd_bot.log'
+log_path = os.path.abspath(log_file)
+handler = RotatingFileHandler(log_path, maxBytes=50000000, backupCount=5)
 logger.addHandler(handler)
 formatter = logging.Formatter(
     '%(asctime)s - %(levelname)s - %(message)s'
