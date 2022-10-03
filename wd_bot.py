@@ -5,6 +5,7 @@ import re
 import idna
 import logging
 
+from pathlib import Path
 from logging.handlers import RotatingFileHandler
 from telegram.ext import CommandHandler, Updater, MessageHandler, Filters
 
@@ -31,7 +32,7 @@ updater = Updater(token=TOKEN)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 log_file = 'wd_bot.log'
-log_path = os.path.abspath(log_file)
+log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), log_file)
 handler = RotatingFileHandler(log_path, maxBytes=50000000, backupCount=5)
 logger.addHandler(handler)
 formatter = logging.Formatter(
