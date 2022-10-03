@@ -20,6 +20,9 @@ DNS_SERVERS = ("8.8.8.8 1.1.1.1 ns1.hostiman.ru "
 ALLOWRD_RECORDS = ('TXT', 'A', 'MX', 'CNAME', 'AAAA', 'SOA', 'DNAME',
                    'DS', 'NS', 'SRV', 'PTR', 'CAA', 'TLSA')
 
+# Length of width between key and value
+LJ_VALUE = 20
+
 updater = Updater(token=TOKEN)
 
 
@@ -27,35 +30,28 @@ def send_message(message, context, chat):
     """Send message to telegram."""
     context.bot.send_message(chat_id=chat.id,
                              text=message,
-                             disable_web_page_preview=True)
+                             disable_web_page_preview=True,
+                             parse_mode='HTML'
+                             )
 
 
 def who(domain_name):
-    """Make whois query and formate output."""
+    """Make whois query and formats the output."""
     domain = whois.query(domain_name)
     if domain:
-        whois_information = '------- Here is whois information: -------\n'
-        whois_information += ('%-15s%-15s' % ('Domain: ', domain.name) + '\n')
+        whois_information = '🔍 Here is whois information:'
+        whois_information += '\nDomain: '.ljust(LJ_VALUE) + idna.decode(domain.name)
         for dom in domain.name_servers:
-            whois_information += ('%-15s%-15s' % ('Nserver: ', dom) + '\n')
+            whois_information += '\nNserver: '.ljust(LJ_VALUE) + dom
         if domain.registrar:
-            whois_information += (
-                    '%-15s%-15s' % ('Registrar: ', domain.registrar) + '\n')
+            whois_information += '\nRegistrar: '.ljust(LJ_VALUE) + domain.registrar
         if domain.creation_date:
-            whois_information += (
-                    '%-15s%-15s' % ('Created: ', str(domain.creation_date))
-                    + '\n')
+            whois_information += '\nCreated: '.ljust(LJ_VALUE) + str(domain.creation_date)
         if domain.expiration_date:
             if datetime.datetime.utcnow() < domain.expiration_date:
-                whois_information += (
-                        '%-15s%-15s'
-                        % ('Paid-till: ', str(domain.expiration_date)
-                           + ' - active!') + '\n')
+                whois_information += '\nExpires: '.ljust(LJ_VALUE) + str(domain.expiration_date) + ' - active!'
             else:
-                whois_information += (
-                        '%-15s%-15s'
-                        % ('Paid-till: ', str(domain.expiration_date)
-                           + ' - DOMAIN IS EXPIRED!') + '\n')
+                whois_information += '\nExpires: '.ljust(LJ_VALUE) + str(domain.expiration_date) + '<b> - EXPIRED! 🛑</b>'
         return whois_information
     else:
         return 'Domain is not registred!'
@@ -70,12 +66,13 @@ def domain_fixer(raw_domain):
         fixed_domain = idna.encode(fixed_domain).decode()
         return fixed_domain
     else:
-        raise BadDomain('Bad domain')
+        raise BadDomain('❗ Bad domain. Maybe you need some /help?')
 
 
 def di(domain_name, record_type):
     """Make dig query and return result."""
-    outputlist = '------- Here is DIG information: -------\n'
+    record_type = record_type.upper()
+    outputlist = f'🔍 Here is DIG {idna.decode(domain_name)}:\n\n'
     if record_type not in ALLOWRD_RECORDS:
         record_type = 'A'
     for server in DNS_SERVERS.split():
@@ -85,15 +82,9 @@ def di(domain_name, record_type):
         )
         temp_output = temp.stdout.decode('utf-8')
         if not temp_output:
-            temp_output = '- empty -'
-        if record_type == 'TXT':
-            outputlist += f'{record_type} at {server}:\n'
-            outputlist += str(temp_output) + '\n'
-        else:
-            temp_output = temp.stdout.decode('utf-8').splitlines()
-            temp_output = ' '.join(temp_output)
-            outputlist += ('%-30s%-10s' % (f'{record_type} at {server}: ',
-                                           str(temp_output) + '\n'))
+            temp_output = '- empty -\n'
+        outputlist += f'▫ {record_type} at {server}:\n'
+        outputlist += str(temp_output) + '\n'
     return outputlist
 
 
@@ -120,32 +111,33 @@ def main(update, context):
                 send_message(whois_output, context, chat)
             except whois.exceptions.UnknownTld:
                 send_message(
-                    "I don't know this toplevel domain",
+                    "❗ I don't know this second-level domain, but let's try some DIG 🌚",
                     context,
                     chat
                 )
             except whois.exceptions.WhoisPrivateRegistry as error:
-                send_message(str(error), context, chat)
+                message = '❗ ' + str(error) + '. Trying to dig...'
+                send_message(message, context, chat)
             finally:
                 dig_output = di(domain, record_type)
                 send_message(dig_output, context, chat)
     else:
-        message = ('You send the wrong request. Please write '
-                   '/help to get information about how to use the bot.')
+        message = ('❗ You send the wrong request. Maybe you need some /help?')
         send_message(message, context, chat)
 
 
 def command_help(update, context):
     """Send help information with telegram command handler."""
     chat = update.effective_chat
-    help_text = (
-        'Бот принимает команды вида: domain.ru MX, '
-        'где вместо domain.ru - необходимо указать проверяемый домен, '
-        'а вместо MX - тип проверяемой записи. Если не задать тип записи, '
-        'или задать необслуживаемую запись, то '
-        'бот будет по-умолчанию проверять А-запись.\nПримеры:\n\nПравильно:\n'
-        'example.ru TXT\nhttp://example.com A\nsite.ru'
-        '\n\nНеправильно:\nA site.com\nexample.ru A MX TXT')
+    help_text = ('You can send messages like: example.com MX\n'
+                 'Instead of example.com you need to specify domain name, that you want to check.\n'
+                 'Instead of MX you need to specify the record type (A, TXT, MX, etc)\n'
+                 'if you you will not specify the record type, or specify the wrong record name, the record type will set to "A".\n\n'
+                 'Examples:\n\n'
+                 '✅ Correct:\n'
+                 'example.ru TXT\nhttp://example.com A\nsite.ru\n\n'
+                 '❌ Wrong:\n'
+                 'A site.com\nexample.ru A MX TXT')
     context.bot.send_message(chat_id=chat.id, text=help_text)
 
 
@@ -158,4 +150,19 @@ def run_telegram_pooling():
     updater.idle()
 
 
-run_telegram_pooling()
+def test_message():
+    """Test function, don't use it in production."""
+    from telegram import Bot
+    bot = Bot(token=TOKEN)
+    chat_id = '159956275'
+    # text = di('google.com', 'MX')
+    text = who('google.com')
+    print(text)
+    bot.send_message(chat_id,
+                     text,
+                     disable_web_page_preview=True,
+                     parse_mode='HTML')
+
+
+if __name__ == '__main__':
+    run_telegram_pooling()
