@@ -7,12 +7,9 @@ def t_message():
     bot = Bot(token=TOKEN)
     chat_id = '159956275'
     # text = di('google.com', 'MX')
-    text = who('google.com')
+    text = who('xn--b1agh1afp.xn--p1ai')
     print(text)
     bot.send_message(chat_id,
                      text,
                      disable_web_page_preview=True,
                      parse_mode='HTML')
-
-
-print(domain_fixer('&.&'))

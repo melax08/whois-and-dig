@@ -53,10 +53,14 @@ def send_message(message, context, chat):
 def who(domain_name):
     """Make whois query and formats the output."""
     domain = whois.query(domain_name)
+    decoded_domain = idna.decode(domain_name)
     if domain:
         whois_information = '🔍 Here is whois information:'
+        if decoded_domain != domain_name:
+            whois_information += ('\nIDN: '.ljust(LJ_VALUE)
+                                  + f'<code>{domain_name}</code>')
         whois_information += ('\nDomain: '.ljust(LJ_VALUE)
-                              + idna.decode(domain.name))
+                              + decoded_domain)
         for dom in domain.name_servers:
             whois_information += '\nNserver: '.ljust(LJ_VALUE) + dom
         if domain.registrar:
