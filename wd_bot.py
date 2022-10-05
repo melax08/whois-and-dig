@@ -132,6 +132,11 @@ def main(update, context):
                 input_message,
                 'Bad domain'))
             send_message(str(error), context, chat)
+        except Exception as error:
+            logger.error(messages.new_exception.format(
+                info.chat.username,
+                input_message,
+                error), exc_info=True)
         else:
             try:
                 whois_output = who(domain)
@@ -153,7 +158,7 @@ def main(update, context):
                 logger.error(messages.new_exception.format(
                     info.chat.username,
                     input_message,
-                    error))
+                    error), exc_info=True)
             finally:
                 dig_output = di(domain, record_type)
                 send_message(dig_output, context, chat)
