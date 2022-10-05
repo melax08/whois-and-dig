@@ -82,7 +82,7 @@ def who(domain_name):
 def domain_fixer(raw_domain):
     """Brings domain to the form: example.com."""
     fixed_domain = raw_domain.lower()
-    fixed_domain = re.search(r'[.\w\d-]*\.\w*', fixed_domain)
+    fixed_domain = re.search(r'[.\w-]+\.[\w-]{2,}', fixed_domain)
     if fixed_domain:
         fixed_domain = fixed_domain.group(0)
         fixed_domain = idna.encode(fixed_domain).decode()

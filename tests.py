@@ -1,7 +1,7 @@
-from wd_bot import di, who, TOKEN
+from wd_bot import di, who, TOKEN, domain_fixer
 
 
-def test_message():
+def t_message():
     """Test function, don't use it in production."""
     from telegram import Bot
     bot = Bot(token=TOKEN)
@@ -13,3 +13,6 @@ def test_message():
                      text,
                      disable_web_page_preview=True,
                      parse_mode='HTML')
+
+
+print(domain_fixer('&.&'))
