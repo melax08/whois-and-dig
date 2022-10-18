@@ -7,7 +7,7 @@ def t_message():
     bot = Bot(token=TOKEN)
     chat_id = '159956275'
     # text = di('google.com', 'MX')
-    text = who('xn--b1agh1afp.xn--p1ai')
+    text = who('2241.ru')
     print(text)
     bot.send_message(chat_id,
                      text,
