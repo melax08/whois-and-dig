@@ -15,7 +15,7 @@ git clone https://github.com/melax08/whois-and-dig.git
 cd whois-and-dig
 ```
 
-Create and activate a virtual environment:
+Create and activate virtual environment:
 
 ```
 python3 -m venv venv
