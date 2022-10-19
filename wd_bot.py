@@ -5,7 +5,6 @@ import re
 import idna
 import logging
 
-from pathlib import Path
 from logging.handlers import RotatingFileHandler
 from telegram.ext import CommandHandler, Updater, MessageHandler, Filters
 

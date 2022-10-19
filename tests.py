@@ -6,8 +6,8 @@ def t_message():
     from telegram import Bot
     bot = Bot(token=TOKEN)
     chat_id = '159956275'
-    # text = di('google.com', 'MX')
-    text = who('2241.ru')
+    text = di('google.com', 'MX')
+    # text = who('2241.ru')
     print(text)
     bot.send_message(chat_id,
                      text,
