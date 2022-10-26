@@ -13,7 +13,7 @@ def t_message():
     from telegram import Bot
     bot = Bot(token=TOKEN)
     chat_id = '159956275'
-    text = di('default._domainkey.2241.ru', 'TXT')
+    text = di('google.com', 'TXT')
     # text = who('google.com')
     print(text)
     bot.send_message(chat_id,

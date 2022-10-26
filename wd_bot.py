@@ -47,10 +47,28 @@ def send_message(message, context, chat):
                              )
 
 
+def domain_encode(domain):
+    """Encode domain from IDN to punycode."""
+    try:
+        domain = idna.encode(domain)
+    except idna.core.InvalidCodepoint:
+        return domain
+    return domain
+
+
+def domain_decode(domain):
+    """Decode domain from punycode to IDN."""
+    try:
+        domain = idna.decode(domain)
+    except idna.core.InvalidCodepoint:
+        return domain
+    return domain
+
+
 def who(domain_name):
     """Make whois query and formats the output."""
     domain = whois.query(domain_name)
-    decoded_domain = idna.decode(domain_name)
+    decoded_domain = domain_decode(domain_name)
     if domain:
         whois_information = '🔍 Here is whois information:'
         if decoded_domain != domain_name:
@@ -86,10 +104,7 @@ def domain_fixer(raw_domain):
     fixed_domain = re.search(r'[.\w-]+\.[\w-]{2,}', fixed_domain)
     if fixed_domain:
         fixed_domain = fixed_domain.group(0)
-        try:
-            fixed_domain = idna.encode(fixed_domain).decode()
-        except idna.core.InvalidCodepoint:
-            return fixed_domain
+        fixed_domain = domain_encode(fixed_domain).decode()
         return fixed_domain
     else:
         raise BadDomain(messages.bad_domain)
@@ -98,7 +113,7 @@ def domain_fixer(raw_domain):
 def di(domain_name, record_type):
     """Make dig query and return result."""
     record_type = record_type.upper()
-    outputlist = f'🔍 Here is DIG {idna.decode(domain_name)}:\n\n'
+    outputlist = f'🔍 Here is DIG {domain_decode(domain_name)}:\n\n'
     if record_type not in ALLOWRD_RECORDS:
         record_type = 'A'
     for server in DNS_SERVERS.split():
