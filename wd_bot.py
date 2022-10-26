@@ -75,7 +75,7 @@ def who(domain_name):
             whois_information += ('\nIDN: '.ljust(LJ_VALUE)
                                   + f'<code>{domain_name}</code>')
         whois_information += ('\nDomain: '.ljust(LJ_VALUE)
-                              + decoded_domain)
+                              + domain_decode(domain.name))
         for dom in domain.name_servers:
             whois_information += '\nNserver: '.ljust(LJ_VALUE) + dom
         if domain.registrar:
