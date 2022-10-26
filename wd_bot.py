@@ -150,7 +150,8 @@ def main(update, context):
                     input_message,
                     error))
                 send_message(messages.unknown_tld, context, chat)
-            except whois.exceptions.WhoisPrivateRegistry as error:
+            except (whois.exceptions.WhoisPrivateRegistry,
+                    whois.exceptions.FailedParsingWhoisOutput) as error:
                 logger.debug(messages.error_log.format(
                     info.chat.username,
                     input_message,
