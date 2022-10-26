@@ -2,15 +2,13 @@ import os
 import subprocess
 import datetime
 import re
-import idna
 import logging
 
+import idna
+import whois
+from dotenv import load_dotenv
 from logging.handlers import RotatingFileHandler
 from telegram.ext import CommandHandler, Updater, MessageHandler, Filters
-
-import whois
-
-from dotenv import load_dotenv
 
 import messages
 from exceptions import BadDomain
@@ -59,7 +57,7 @@ def who(domain_name):
             whois_information += ('\nIDN: '.ljust(LJ_VALUE)
                                   + f'<code>{domain_name}</code>')
         whois_information += ('\nDomain: '.ljust(LJ_VALUE)
-                              + domain.name)
+                              + decoded_domain)
         for dom in domain.name_servers:
             whois_information += '\nNserver: '.ljust(LJ_VALUE) + dom
         if domain.registrar:
@@ -88,7 +86,10 @@ def domain_fixer(raw_domain):
     fixed_domain = re.search(r'[.\w-]+\.[\w-]{2,}', fixed_domain)
     if fixed_domain:
         fixed_domain = fixed_domain.group(0)
-        fixed_domain = idna.encode(fixed_domain).decode()
+        try:
+            fixed_domain = idna.encode(fixed_domain).decode()
+        except idna.core.InvalidCodepoint:
+            return fixed_domain
         return fixed_domain
     else:
         raise BadDomain(messages.bad_domain)
