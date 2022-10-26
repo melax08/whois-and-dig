@@ -1,6 +1,6 @@
 import whois
 
-from wd_bot import di, who, TOKEN, domain_fixer
+from wd_bot import di, who, TOKEN, domain_fixer, domain_encode
 
 
 def t_whois(domain):

@@ -53,7 +53,7 @@ def domain_encode(domain):
         domain = idna.encode(domain)
     except idna.core.InvalidCodepoint:
         return domain
-    return domain
+    return domain.decode()
 
 
 def domain_decode(domain):
@@ -104,7 +104,7 @@ def domain_fixer(raw_domain):
     fixed_domain = re.search(r'[.\w-]+\.[\w-]{2,}', fixed_domain)
     if fixed_domain:
         fixed_domain = fixed_domain.group(0)
-        fixed_domain = domain_encode(fixed_domain).decode()
+        fixed_domain = domain_encode(fixed_domain)
         return fixed_domain
     else:
         raise BadDomain(messages.bad_domain)
