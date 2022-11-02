@@ -72,7 +72,7 @@ def who(domain_name):
     if domain:
         whois_information = '🔍 Here is whois information:'
         if decoded_domain != domain_name:
-            whois_information += ('\nIDN: '.ljust(LJ_VALUE)
+            whois_information += ('\nPunycode: '.ljust(LJ_VALUE)
                                   + f'<code>{domain_name}</code>')
         whois_information += ('\nDomain: '.ljust(LJ_VALUE)
                               + domain_decode(domain.name))
