@@ -1,3 +1,10 @@
+"""
+Old version of program, only functions without OOP.
+Domain features like whois and dig now in wd.py.
+Telegram bot handling now in wd_telegram_bot.py.
+"""
+
+
 import os
 import subprocess
 import datetime
