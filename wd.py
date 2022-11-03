@@ -91,15 +91,17 @@ class Domain:
         else:
             return messages.domain_not_registred
 
-    def whois_json(self) -> str:
+    def whois_json(self) -> dict:
         """Make whois query and brings it to JSON output."""
         decoded_domain = domain_decode(self.domain)
         query = whois.query(self.domain)
         if query:
             if decoded_domain != self.domain:
                 query.__dict__['name_IDN'] = decoded_domain
-            return json.dumps(query.__dict__, default=str, ensure_ascii=False)
-        return json.dumps({'message': 'Domain is not registred'})
+            else:
+                query.__dict__['name_IDN'] = None
+            return query.__dict__
+        return {'message': 'Domain is not registred'}
 
     def dig_tg_message(self, record: str = 'A') -> str:
         """Make dig query and return telegram string message."""
