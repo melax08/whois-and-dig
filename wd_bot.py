@@ -18,7 +18,7 @@ load_dotenv()
 TOKEN = os.getenv('TOKEN')
 DNS_SERVERS = ("8.8.8.8 1.1.1.1 ns1.hostiman.ru "
                "ns2.hostiman.ru ns3.hostiman.com ns4.hostiman.com")
-ALLOWRD_RECORDS = ('TXT', 'A', 'MX', 'CNAME', 'AAAA', 'SOA', 'DNAME',
+ALLOWED_RECORDS = ('TXT', 'A', 'MX', 'CNAME', 'AAAA', 'SOA', 'DNAME',
                    'DS', 'NS', 'SRV', 'PTR', 'CAA', 'TLSA')
 
 # Length of width between key and value in whois
@@ -114,7 +114,7 @@ def di(domain_name, record_type):
     """Make dig query and return result."""
     record_type = record_type.upper()
     outputlist = f'🔍 Here is DIG {domain_decode(domain_name)}:\n\n'
-    if record_type not in ALLOWRD_RECORDS:
+    if record_type not in ALLOWED_RECORDS:
         record_type = 'A'
     for server in DNS_SERVERS.split():
         temp = subprocess.run(
@@ -200,8 +200,7 @@ def command_help(update, context):
 def run_telegram_pooling():
     """Telegram create handlers and pooling."""
     logger.info('Start pooling')
-    updater.dispatcher.add_handler(CommandHandler('start', command_help))
-    updater.dispatcher.add_handler(CommandHandler('help', command_help))
+    updater.dispatcher.add_handler(CommandHandler(['start', 'help'], command_help))
     updater.dispatcher.add_handler(MessageHandler(Filters.text, main))
     updater.start_polling()
     updater.idle()
