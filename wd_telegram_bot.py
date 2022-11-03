@@ -4,14 +4,16 @@ import logging
 import whois
 from dotenv import load_dotenv
 from logging.handlers import RotatingFileHandler
-from telegram.ext import CommandHandler, Updater, MessageHandler, Filters
+from telegram import Update
+from telegram.ext import (CommandHandler, Updater, MessageHandler,
+                          Filters, ContextTypes)
 
 import messages
 from exceptions import BadDomain
 from wd import Domain
 
 load_dotenv()
-TOKEN = os.getenv('TOKEN')
+TOKEN: str = os.getenv('TOKEN')
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -28,10 +30,12 @@ updater = Updater(token=TOKEN)
 
 
 class WDTelegramBot:
-    def __init__(self, updater):
+    def __init__(self, updater: Updater) -> None:
         self.updater = updater
 
-    def send_message(self, message, context, chat):
+    def send_message(self, message: str,
+                     context: ContextTypes.context,
+                     chat: Update.effective_chat) -> None:
         """Send message to telegram bot."""
         context.bot.send_message(chat_id=chat.id,
                                  text=message,
@@ -39,7 +43,8 @@ class WDTelegramBot:
                                  parse_mode='HTML'
                                  )
 
-    def command_help(self, update, context):
+    def command_help(self, update: Update,
+                     context: ContextTypes.context) -> None:
         """Send help information with telegram command handler."""
         chat = update.effective_chat
         info = update.message
@@ -49,7 +54,7 @@ class WDTelegramBot:
                 f'{info.chat.first_name} {info.chat.last_name}, {chat.id}')
         context.bot.send_message(chat_id=chat.id, text=messages.help_text)
 
-    def wd_main(self, update, context):
+    def wd_main(self, update: Update, context: ContextTypes.context) -> None:
         """Main function for handle user requests and return whois&dig info."""
         chat = update.effective_chat
         info = update.message
@@ -106,7 +111,7 @@ class WDTelegramBot:
         else:
             self.send_message(messages.wrong_request, context, chat)
 
-    def run_telegram_pooling(self):
+    def run_telegram_pooling(self) -> None:
         """Create telegram handlers and start pooling."""
         logger.info('Start pooling')
         self.updater.dispatcher.add_handler(
