@@ -32,7 +32,7 @@ class WDTelegramBot:
         self.updater = updater
 
     def send_message(self, message, context, chat):
-        """Send message to telegram."""
+        """Send message to telegram bot."""
         context.bot.send_message(chat_id=chat.id,
                                  text=message,
                                  disable_web_page_preview=True,
@@ -50,7 +50,7 @@ class WDTelegramBot:
         context.bot.send_message(chat_id=chat.id, text=messages.help_text)
 
     def wd_main(self, update, context):
-        """Main function for telegram message handler."""
+        """Main function for handle user requests and return whois&dig info."""
         chat = update.effective_chat
         info = update.message
         input_message = info.text.split()
@@ -107,7 +107,7 @@ class WDTelegramBot:
             self.send_message(messages.wrong_request, context, chat)
 
     def run_telegram_pooling(self):
-        """Telegram create handlers and pooling."""
+        """Create telegram handlers and start pooling."""
         logger.info('Start pooling')
         self.updater.dispatcher.add_handler(
             CommandHandler(['start', 'help'], self.command_help))

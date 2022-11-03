@@ -35,11 +35,17 @@ def domain_decode(domain):
 
 
 class Domain:
+    """The Domain class receive a raw URL, link, domain or whatever
+    then find domain name with regexp and allow to use various methods to get
+    information about domain.
+    """
+
     def __init__(self, raw_site):
         self.raw_site = raw_site
         self.domain = self.domain_getter()
 
     def domain_getter(self):
+        """Lookup for domain in string and return it."""
         domain = self.raw_site.lower()
         domain = re.search(r'[.\w-]+\.[\w-]{2,}', domain)
         if domain:
@@ -50,7 +56,9 @@ class Domain:
             raise BadDomain(messages.bad_domain)
 
     def whois_tg_message(self):
-        """Make whois query and formats the output."""
+        """Make whois query and brings the output to string
+        which can be sent as a message to telegram.
+        """
         decoded_domain = domain_decode(self.domain)
         query = whois.query(self.domain)
         if query:
@@ -82,6 +90,7 @@ class Domain:
             return messages.domain_not_registred
 
     def whois_json(self):
+        """Make whois query and brings it to JSON output."""
         decoded_domain = domain_decode(self.domain)
         query = whois.query(self.domain)
         if query:
@@ -109,6 +118,7 @@ class Domain:
         return outputlist
 
     def dig_json(self, record='A'):
+        """Make dig query and brings it to JSON output."""
         record = record.upper()
         if record not in ALLOWED_RECORDS:
             record = 'A'
