@@ -4,18 +4,28 @@ import datetime
 import re
 import logging
 import json
+import pprint
 
 import idna
 import whois
-from dotenv import load_dotenv
-from logging.handlers import RotatingFileHandler
-from telegram.ext import CommandHandler, Updater, MessageHandler, Filters
+
+import messages
+from exceptions import BadDomain
+import datetime
+import json
+import re
+
+import idna
+import whois
 
 import messages
 from exceptions import BadDomain
 
-
 LJ_VALUE = 20
+ALLOWED_RECORDS = ('TXT', 'A', 'MX', 'CNAME', 'AAAA', 'SOA', 'DNAME',
+                   'DS', 'NS', 'SRV', 'PTR', 'CAA', 'TLSA')
+DNS_SERVERS = ("8.8.8.8 1.1.1.1 ns1.hostiman.ru "
+               "ns2.hostiman.ru ns3.hostiman.com ns4.hostiman.com")
 
 
 def domain_encode(domain):
@@ -39,6 +49,7 @@ def domain_decode(domain):
 class Domain:
     def __init__(self, raw_site):
         self.raw_site = raw_site
+        self.domain = self.domain_getter()
 
     def domain_getter(self):
         domain = self.raw_site.lower()
@@ -52,12 +63,11 @@ class Domain:
 
     def whois_tg_message(self):
         """Make whois query and formats the output."""
-        domain = self.domain_getter()
-        decoded_domain = domain_decode(domain)
-        query = whois.query(domain)
+        decoded_domain = domain_decode(self.domain)
+        query = whois.query(self.domain)
         if query:
             whois_information = '🔍 Here is whois information:'
-            if decoded_domain != domain:
+            if decoded_domain != self.domain:
                 whois_information += ('\nPunycode: '.ljust(LJ_VALUE)
                                       + f'<code>{query.name}</code>')
             whois_information += ('\nDomain: '.ljust(LJ_VALUE)
@@ -84,13 +94,50 @@ class Domain:
             return messages.domain_not_registred
 
     def whois_json(self):
-        domain = self.domain_getter()
-        decoded_domain = domain_decode(domain)
-        query = whois.query(domain).__dict__
-        if decoded_domain != domain:
-            query['name_IDN'] = decoded_domain
-        return json.dumps(query, default=str)
+        decoded_domain = domain_decode(self.domain)
+        query = whois.query(self.domain)
+        if query:
+            if decoded_domain != self.domain:
+                query.__dict__['name_IDN'] = decoded_domain
+            return json.dumps(query.__dict__, default=str, ensure_ascii=False)
+        return json.dumps({'message': 'Domain is not registred'})
+
+    def dig_tg_message(self, record='A'):
+        """Make dig query and return telegram string message."""
+        record = record.upper()
+        outputlist = f'🔍 Here is DIG {domain_decode(self.domain)}:\n\n'
+        if record not in ALLOWED_RECORDS:
+            record = 'A'
+        for server in DNS_SERVERS.split():
+            temp = subprocess.run(
+                ['dig', '+short', self.domain, f'@{server}', record],
+                stdout=subprocess.PIPE
+            )
+            temp_output = temp.stdout.decode('utf-8')
+            if not temp_output:
+                temp_output = '- empty -\n'
+            outputlist += f'▫ {record} at {server}:\n'
+            outputlist += str(temp_output) + '\n'
+        return outputlist
+
+    def dig_json(self, record='A'):
+        record = record.upper()
+        if record not in ALLOWED_RECORDS:
+            record = 'A'
+        output = {
+            'Domain': self.domain,
+            'Record': record,
+        }
+        for server in DNS_SERVERS.split():
+            temp = subprocess.run(
+                ['dig', '+short', self.domain, f'@{server}', record],
+                stdout=subprocess.PIPE
+            )
+            temp_output = temp.stdout.decode('utf-8').rstrip()
+            temp_output = re.sub('"', '', temp_output)
+            output[server] = temp_output.split('\n')
+        return json.dumps(output)
 
 
-dom = Domain('привет.рф')
-print(dom.whois_json())
+dom = Domain('2241.ru')
+print(dom.dig_json('TXT'))
