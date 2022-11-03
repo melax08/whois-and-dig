@@ -58,7 +58,11 @@ class WDTelegramBot:
         """Main function for handle user requests and return whois&dig info."""
         chat = update.effective_chat
         info = update.message
-        input_message = info.text.split()
+        edited_message = update.edited_message
+        if edited_message:
+            input_message = edited_message.text.split()
+        else:
+            input_message = info.text.split()
         domain = ''
         record_type = ''
         if len(input_message) == 2:
@@ -83,8 +87,9 @@ class WDTelegramBot:
                     error), exc_info=True)
             else:
                 try:
-                    whois_output = domain.whois_tg_message()
-                    self.send_message(whois_output, context, chat)
+                    if not edited_message:
+                        whois_output = domain.whois_tg_message()
+                        self.send_message(whois_output, context, chat)
                 except whois.exceptions.UnknownTld as error:
                     logger.debug(messages.error_log.format(
                         info.chat.username,
