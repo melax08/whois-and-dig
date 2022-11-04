@@ -1,7 +1,6 @@
 import subprocess
 import datetime
 import re
-import json
 from typing import Tuple
 
 import idna
@@ -13,9 +12,9 @@ from exceptions import BadDomain
 ALLOWED_RECORDS: Tuple[str, ...] = ('TXT', 'A', 'MX', 'CNAME', 'AAAA', 'SOA',
                                     'DNAME', 'DS', 'NS', 'SRV', 'PTR', 'CAA',
                                     'TLSA')
-DNS_SERVERS: tuple = ('8.8.8.8', '1.1.1.1',
-                      'ns1.hostiman.ru', 'ns2.hostiman.ru',
-                      'ns3.hostiman.com', 'ns4.hostiman.com')
+DNS_SERVERS: Tuple[str, ...] = ('8.8.8.8', '1.1.1.1', 'ns1.hostiman.ru',
+                                'ns2.hostiman.ru', 'ns3.hostiman.com',
+                                'ns4.hostiman.com')
 LJ_VALUE: int = 20
 
 
