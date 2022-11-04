@@ -13,7 +13,7 @@ from exceptions import BadDomain
 def whois(request):
     serializer = WhoisSerializer(data=request.data)
     if serializer.is_valid():
-        domain = serializer.get('domain')
+        domain = serializer.data.get('domain')
         try:
             dom = Domain(domain)
             whois_output = dom.whois_json()

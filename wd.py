@@ -112,8 +112,8 @@ class Domain:
         if record not in ALLOWED_RECORDS:
             record = 'A'
         output = {
-            'Domain': self.domain,
-            'Record': record,
+            'domain': self.domain,
+            'record': record,
         }
         if custom_dns:
             ns_list = custom_dns

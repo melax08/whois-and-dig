@@ -1,18 +1,13 @@
 from django.urls import path, include
 from rest_framework import routers
+from rest_framework.authtoken import views
+
 from .views import whois, dig
 
 app_name = 'api'
 
-# router_v1 = routers.DefaultRouter()
-# router_v1.register(r'whois', whois, basename='whois')
-# # router_v1.register(r'dig', dig, basename='dig')
-#
-# urlpatterns = [
-#     path('v1/', include(router_v1.urls)),
-# ]
-
 urlpatterns = [
     path('v1/whois/', whois),
     path('v1/dig/', dig),
+    path('v1/get-token/', views.obtain_auth_token)
 ]
