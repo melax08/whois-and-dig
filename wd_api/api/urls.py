@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework import routers
-from .views import whois
+from .views import whois, dig
 
 app_name = 'api'
 
@@ -14,4 +14,5 @@ app_name = 'api'
 
 urlpatterns = [
     path('v1/whois/', whois),
+    path('v1/dig/', dig),
 ]

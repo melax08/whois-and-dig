@@ -13,8 +13,9 @@ from exceptions import BadDomain
 ALLOWED_RECORDS: Tuple[str, ...] = ('TXT', 'A', 'MX', 'CNAME', 'AAAA', 'SOA',
                                     'DNAME', 'DS', 'NS', 'SRV', 'PTR', 'CAA',
                                     'TLSA')
-DNS_SERVERS: str = ("8.8.8.8 1.1.1.1 ns1.hostiman.ru "
-                    "ns2.hostiman.ru ns3.hostiman.com ns4.hostiman.com")
+DNS_SERVERS: tuple = ('8.8.8.8', '1.1.1.1',
+                      'ns1.hostiman.ru', 'ns2.hostiman.ru',
+                      'ns3.hostiman.com', 'ns4.hostiman.com')
 LJ_VALUE: int = 20
 
 
@@ -103,13 +104,44 @@ class Domain:
             return query.__dict__
         return {'message': 'Domain is not registred'}
 
+    def dig(self, record: str = 'A', custom_dns: tuple = ()) -> dict:
+        """Main dig method, Returns information
+        about the specified entry on the specified name servers.
+        """
+        if record:
+            record = record.upper()
+        if record not in ALLOWED_RECORDS:
+            record = 'A'
+        output = {
+            'Domain': self.domain,
+            'Record': record,
+        }
+        if custom_dns:
+            ns_list = custom_dns
+        else:
+            ns_list = DNS_SERVERS
+        for server in ns_list:
+            temp = subprocess.run(
+                ['dig', '+short', self.domain, f'@{server}', record],
+                stdout=subprocess.PIPE
+            )
+            temp_output = temp.stdout.decode('utf-8').rstrip()
+            temp_output = re.sub('"', '', temp_output)
+            if '\n' in temp_output:
+                output[server] = temp_output.split('\n')
+            elif not temp_output:
+                output[server] = None
+            else:
+                output[server] = temp_output
+        return output
+
     def dig_tg_message(self, record: str = 'A') -> str:
         """Make dig query and return telegram string message."""
         record = record.upper()
         outputlist = f'🔍 Here is DIG {domain_decode(self.domain)}:\n\n'
         if record not in ALLOWED_RECORDS:
             record = 'A'
-        for server in DNS_SERVERS.split():
+        for server in DNS_SERVERS:
             temp = subprocess.run(
                 ['dig', '+short', self.domain, f'@{server}', record],
                 stdout=subprocess.PIPE
@@ -120,22 +152,3 @@ class Domain:
             outputlist += f'▫ {record} at {server}:\n'
             outputlist += str(temp_output) + '\n'
         return outputlist
-
-    def dig_json(self, record: str = 'A') -> str:
-        """Make dig query and brings it to JSON output."""
-        record = record.upper()
-        if record not in ALLOWED_RECORDS:
-            record = 'A'
-        output = {
-            'Domain': self.domain,
-            'Record': record,
-        }
-        for server in DNS_SERVERS.split():
-            temp = subprocess.run(
-                ['dig', '+short', self.domain, f'@{server}', record],
-                stdout=subprocess.PIPE
-            )
-            temp_output = temp.stdout.decode('utf-8').rstrip()
-            temp_output = re.sub('"', '', temp_output)
-            output[server] = temp_output.split('\n')
-        return json.dumps(output)

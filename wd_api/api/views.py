@@ -18,6 +18,22 @@ def whois(request):
             dom = Domain(domain)
             whois_output = dom.whois_json()
         except BadDomain:
-            whois_output = {'message': 'Bad domain'}
+            return Response({'message': 'Bad domain'}, status=status.HTTP_400_BAD_REQUEST)
         return Response(whois_output, status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def dig(request):
+    serializers = DigSerializer(data=request.data)
+    if serializers.is_valid():
+        domain = serializers.data.get('domain')
+        record = serializers.data.get('record')
+        custom_dns = serializers.data.get('dns')
+        try:
+            dom = Domain(domain)
+            dig_output = dom.dig(record, custom_dns)
+        except BadDomain:
+            return Response({'message': 'Bad domain'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(dig_output, status=status.HTTP_200_OK)
+    return Response(serializers.errors, status=status.HTTP_400_BAD_REQUEST)
