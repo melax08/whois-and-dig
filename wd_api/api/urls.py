@@ -6,7 +6,7 @@ app_name = 'api'
 
 # router_v1 = routers.DefaultRouter()
 # router_v1.register(r'whois', whois, basename='whois')
-# # router_v1.register(r'dig', ..., basename='dig')
+# # router_v1.register(r'dig', dig, basename='dig')
 #
 # urlpatterns = [
 #     path('v1/', include(router_v1.urls)),

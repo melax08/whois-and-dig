@@ -1,10 +1,10 @@
 from rest_framework import status
 from rest_framework.response import Response
-from .serializers import WhoisSerializer, DigSerializer
 from rest_framework.decorators import api_view
 import sys
 sys.path.append('../../whois-and-dig')
 
+from .serializers import WhoisSerializer, DigSerializer
 from wd import Domain
 from exceptions import BadDomain
 
@@ -13,12 +13,15 @@ from exceptions import BadDomain
 def whois(request):
     serializer = WhoisSerializer(data=request.data)
     if serializer.is_valid():
-        domain = serializer.data['domain']
+        domain = serializer.get('domain')
         try:
             dom = Domain(domain)
             whois_output = dom.whois_json()
         except BadDomain:
-            return Response({'message': 'Bad domain'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'message': 'Bad domain'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         return Response(whois_output, status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -34,6 +37,9 @@ def dig(request):
             dom = Domain(domain)
             dig_output = dom.dig(record, custom_dns)
         except BadDomain:
-            return Response({'message': 'Bad domain'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'message': 'Bad domain'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         return Response(dig_output, status=status.HTTP_200_OK)
     return Response(serializers.errors, status=status.HTTP_400_BAD_REQUEST)
