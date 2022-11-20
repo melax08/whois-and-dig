@@ -121,7 +121,7 @@ class Domain:
             ns_list = DNS_SERVERS
         for server in ns_list:
             temp = subprocess.run(
-                ['dig', '+short', self.domain, f'@{server}', record],
+                ['dig', '+short', self.domain, f'@{server}', record, '+time=3'],
                 stdout=subprocess.PIPE
             )
             temp_output = temp.stdout.decode('utf-8').rstrip()
@@ -135,19 +135,18 @@ class Domain:
         return output
 
     def dig_tg_message(self, record: str = 'A') -> str:
-        """Make dig query and return telegram string message."""
-        record = record.upper()
-        outputlist = f'🔍 Here is DIG {domain_decode(self.domain)}:\n\n'
-        if record not in ALLOWED_RECORDS:
-            record = 'A'
-        for server in DNS_SERVERS:
-            temp = subprocess.run(
-                ['dig', '+short', self.domain, f'@{server}', record],
-                stdout=subprocess.PIPE
-            )
-            temp_output = temp.stdout.decode('utf-8')
-            if not temp_output:
-                temp_output = '- empty -\n'
-            outputlist += f'▫ {record} at {server}:\n'
-            outputlist += str(temp_output) + '\n'
-        return outputlist
+        """Makes the dig dict a telegram message."""
+        dig_output = self.dig(record=record)
+        domain = dig_output.pop('domain')
+        record = dig_output.pop('record')
+        message = f'🔍 Here is DIG {domain}:\n\n'
+        for ns, result in dig_output.items():
+            message += f'▫ {record} at {ns}:\n'
+            if isinstance(result, list):
+                message += '\n'.join(result)
+                message += '\n\n'
+            elif not result:
+                message += '- empty -\n\n'
+            else:
+                message += result + '\n\n'
+        return message
