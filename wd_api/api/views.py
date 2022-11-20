@@ -5,6 +5,8 @@ from rest_framework.views import APIView
 import sys
 sys.path.append('../../whois-and-dig')
 
+import whois
+
 from .serializers import WhoisSerializer, DigSerializer
 from wd import Domain
 from exceptions import BadDomain
@@ -20,6 +22,9 @@ class Whois(APIView):
             whois_output = dom.whois_json()
         except BadDomain:
             raise serializers.ValidationError({'domain': 'Bad domain'})
+        except whois.exceptions.WhoisCommandFailed:
+            return Response({'domain': 'connection refused'},
+                            status=status.HTTP_503_SERVICE_UNAVAILABLE)
         return Response(whois_output, status=status.HTTP_200_OK)
 
 
