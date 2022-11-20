@@ -105,7 +105,8 @@ class WDTelegramBot:
                         info.chat.username,
                         input_message,
                         error))
-                    message = '❗ ' + str(error) + '. Trying to dig...'
+                    message = ('❗ Whois error: ' + str(error).rstrip()
+                               + '. Trying to dig...')
                     self.send_message(message, context, chat)
                 except Exception as error:
                     logger.error(messages.new_exception.format(
