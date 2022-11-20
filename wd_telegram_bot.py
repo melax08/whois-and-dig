@@ -96,8 +96,11 @@ class WDTelegramBot:
                         input_message,
                         error))
                     self.send_message(messages.unknown_tld, context, chat)
-                except (whois.exceptions.WhoisPrivateRegistry,
-                        whois.exceptions.FailedParsingWhoisOutput) as error:
+                except (
+                        whois.exceptions.WhoisPrivateRegistry,
+                        whois.exceptions.FailedParsingWhoisOutput,
+                        whois.exceptions.WhoisCommandFailed
+                ) as error:
                     logger.debug(messages.error_log.format(
                         info.chat.username,
                         input_message,
