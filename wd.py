@@ -100,6 +100,16 @@ class Domain:
                 query.__dict__['name_IDN'] = decoded_domain
             else:
                 query.__dict__['name_IDN'] = None
+            if query.expiration_date:
+                if datetime.datetime.utcnow() < query.expiration_date:
+                    query.__dict__['is_active'] = True
+                else:
+                    query.__dict__['is_active'] = False
+                query.expiration_date = int(query.expiration_date.timestamp())
+            else:
+                query.__dict__['is_active'] = None
+            if query.creation_date:
+                query.creation_date = int(query.creation_date.timestamp())
             return query.__dict__
         return {'message': 'Domain is not registred'}
 
