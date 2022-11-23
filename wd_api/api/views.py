@@ -1,6 +1,5 @@
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework import serializers
 from rest_framework.views import APIView
 import sys
 sys.path.append('../../whois-and-dig')
@@ -21,11 +20,12 @@ class Whois(APIView):
             dom = Domain(domain)
             whois_output = dom.whois_json()
         except BadDomain:
-            raise serializers.ValidationError(
+            return Response(
                 {
                     'result': False,
                     'domain': 'Bad domain'
-                }
+                },
+                status=status.HTTP_200_OK
             )
         except (
                 whois.exceptions.WhoisCommandFailed,
@@ -55,10 +55,11 @@ class Dig(APIView):
             dom = Domain(domain)
             dig_output = dom.dig(record, custom_dns)
         except BadDomain:
-            raise serializers.ValidationError(
+            return Response(
                 {
                     'result': False,
                     'domain': 'Bad domain'
-                }
+                },
+                status=status.HTTP_200_OK
             )
         return Response(dig_output, status=status.HTTP_200_OK)
