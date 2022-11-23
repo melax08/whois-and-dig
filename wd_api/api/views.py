@@ -27,11 +27,15 @@ class Whois(APIView):
                     'domain': 'Bad domain'
                 }
             )
-        except whois.exceptions.WhoisCommandFailed:
+        except (
+                whois.exceptions.WhoisCommandFailed,
+                whois.exceptions.WhoisPrivateRegistry,
+                whois.exceptions.FailedParsingWhoisOutput
+        ):
             return Response(
                 {
                     'result': False,
-                    'domain': 'connection refused'
+                    'domain': 'Something wrong while whois query'
                  },
                 status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
