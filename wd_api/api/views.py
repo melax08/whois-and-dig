@@ -21,10 +21,20 @@ class Whois(APIView):
             dom = Domain(domain)
             whois_output = dom.whois_json()
         except BadDomain:
-            raise serializers.ValidationError({'domain': 'Bad domain'})
+            raise serializers.ValidationError(
+                {
+                    'result': False,
+                    'domain': 'Bad domain'
+                }
+            )
         except whois.exceptions.WhoisCommandFailed:
-            return Response({'domain': 'connection refused'},
-                            status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            return Response(
+                {
+                    'result': False,
+                    'domain': 'connection refused'
+                 },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
         return Response(whois_output, status=status.HTTP_200_OK)
 
 
@@ -39,5 +49,10 @@ class Dig(APIView):
             dom = Domain(domain)
             dig_output = dom.dig(record, custom_dns)
         except BadDomain:
-            raise serializers.ValidationError({'domain': 'Bad domain'})
+            raise serializers.ValidationError(
+                {
+                    'result': False,
+                    'domain': 'Bad domain'
+                }
+            )
         return Response(dig_output, status=status.HTTP_200_OK)
