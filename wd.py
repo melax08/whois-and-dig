@@ -125,6 +125,7 @@ class Domain:
         output = {
             'domain': self.domain,
             'record': record,
+            'result': True
         }
         if custom_dns:
             ns_list = custom_dns
@@ -150,6 +151,7 @@ class Domain:
         dig_output = self.dig(record=record)
         domain = dig_output.pop('domain')
         record = dig_output.pop('record')
+        result = dig_output.pop('result')
         message = f'🔍 Here is DIG {domain}:\n\n'
         for ns, result in dig_output.items():
             message += f'▫ {record} at {ns}:\n'
