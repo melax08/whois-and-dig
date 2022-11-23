@@ -30,12 +30,13 @@ class Whois(APIView):
         except (
                 whois.exceptions.WhoisCommandFailed,
                 whois.exceptions.WhoisPrivateRegistry,
-                whois.exceptions.FailedParsingWhoisOutput
-        ):
+                whois.exceptions.FailedParsingWhoisOutput,
+                whois.exceptions.UnknownTld
+        ) as error:
             return Response(
                 {
                     'result': False,
-                    'domain': 'Something wrong while whois query'
+                    'domain': str(error)
                  },
                 status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
