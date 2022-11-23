@@ -31,14 +31,15 @@ class Whois(APIView):
                 whois.exceptions.WhoisCommandFailed,
                 whois.exceptions.WhoisPrivateRegistry,
                 whois.exceptions.FailedParsingWhoisOutput,
-                whois.exceptions.UnknownTld
+                whois.exceptions.UnknownTld,
+                whois.exceptions.UnknownDateFormat
         ) as error:
             return Response(
                 {
                     'result': False,
                     'domain': str(error)
                  },
-                status=status.HTTP_503_SERVICE_UNAVAILABLE
+                status=status.HTTP_200_OK
             )
         return Response(whois_output, status=status.HTTP_200_OK)
 
