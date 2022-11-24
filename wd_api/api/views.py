@@ -6,8 +6,8 @@ sys.path.append('../../whois-and-dig')
 
 import whois
 
-from .serializers import WhoisSerializer, DigSerializer
-from wd import Domain
+from .serializers import WhoisSerializer, DigSerializer, DigSettingsSerializer
+from wd import Domain, ALLOWED_RECORDS, DEFAULT_TYPE
 from exceptions import BadDomain
 
 
@@ -63,3 +63,13 @@ class Dig(APIView):
                 status=status.HTTP_200_OK
             )
         return Response(dig_output, status=status.HTTP_200_OK)
+
+
+class DigSettings(APIView):
+    def get(self, request):
+        data = {
+            "default_type": DEFAULT_TYPE,
+            "allowed_records": ALLOWED_RECORDS
+        }
+        serializer = DigSettingsSerializer(data)
+        return Response(serializer.data)

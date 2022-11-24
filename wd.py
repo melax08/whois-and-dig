@@ -12,6 +12,7 @@ from exceptions import BadDomain
 ALLOWED_RECORDS: Tuple[str, ...] = ('TXT', 'A', 'MX', 'CNAME', 'AAAA', 'SOA',
                                     'DNAME', 'DS', 'NS', 'SRV', 'PTR', 'CAA',
                                     'TLSA')
+DEFAULT_TYPE: str = 'A'
 DNS_SERVERS: Tuple[str, ...] = ('8.8.8.8', '1.1.1.1', 'ns1.hostiman.ru',
                                 'ns2.hostiman.ru', 'ns3.hostiman.com',
                                 'ns4.hostiman.com')
@@ -114,14 +115,14 @@ class Domain:
             return query.__dict__
         return {'result': False}
 
-    def dig(self, record: str = 'A', custom_dns: tuple = ()) -> dict:
+    def dig(self, record: str = DEFAULT_TYPE, custom_dns: tuple = ()) -> dict:
         """Main dig method, Returns information
         about the specified entry on the specified name servers.
         """
         if record:
             record = record.upper()
         if record not in ALLOWED_RECORDS:
-            record = 'A'
+            record = DEFAULT_TYPE
         output = {
             'domain': self.domain,
             'record': record,
@@ -157,7 +158,7 @@ class Domain:
                 output['data'][server].append(new_result)
         return output
 
-    def dig_tg_message(self, record: str = 'A') -> str:
+    def dig_tg_message(self, record: str = DEFAULT_TYPE) -> str:
         dig_output = self.dig(record=record)
         domain = dig_output.pop('domain')
         record = dig_output.pop('record')
