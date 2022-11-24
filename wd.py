@@ -158,19 +158,17 @@ class Domain:
         return output
 
     def dig_tg_message(self, record: str = 'A') -> str:
-        """Makes the dig dict a telegram message."""
         dig_output = self.dig(record=record)
         domain = dig_output.pop('domain')
         record = dig_output.pop('record')
-        result = dig_output.pop('result')
         message = f'🔍 Here is DIG {domain}:\n\n'
-        for ns, result in dig_output.items():
+        for ns, results in dig_output['data'].items():
             message += f'▫ {record} at {ns}:\n'
-            if isinstance(result, list):
-                message += '\n'.join(result)
-                message += '\n\n'
-            elif not result:
-                message += '- empty -\n\n'
+            if results:
+                for result in results:
+                    content = result.get('content')
+                    message += content + '\n'
+                message += '\n'
             else:
-                message += result + '\n\n'
+                message += '- empty -\n\n'
         return message
