@@ -125,25 +125,36 @@ class Domain:
         output = {
             'domain': self.domain,
             'record': record,
-            'result': True
+            'result': True,
+            'data': {}
         }
         if custom_dns:
             ns_list = custom_dns
         else:
             ns_list = DNS_SERVERS
         for server in ns_list:
+            output['data'][server] = []
             temp = subprocess.run(
-                ['dig', '+short', self.domain, f'@{server}', record, '+time=3'],
+                [
+                    'dig',
+                    '+noall',
+                    '+answer',
+                    self.domain,
+                    f'@{server}',
+                    record,
+                    '+timeout=3'
+                ],
                 stdout=subprocess.PIPE
             )
-            temp_output = temp.stdout.decode('utf-8').rstrip()
+            temp_output = temp.stdout.decode('utf-8')
             temp_output = re.sub('"', '', temp_output)
-            if '\n' in temp_output:
-                output[server] = temp_output.split('\n')
-            elif not temp_output:
-                output[server] = None
-            else:
-                output[server] = temp_output
+            for result in temp_output.splitlines():
+                query = result.split(maxsplit=4)
+                new_result = {
+                    'ttl': query[1],
+                    'content': query[4]
+                }
+                output['data'][server].append(new_result)
         return output
 
     def dig_tg_message(self, record: str = 'A') -> str:
