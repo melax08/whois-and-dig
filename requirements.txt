@@ -5,6 +5,7 @@ cachetools==4.2.2
 certifi==2022.9.24
 charset-normalizer==2.1.1
 Django==3.2.16
+django-rest-framework==0.1.0
 djangorestframework==3.14.0
 idna==3.4
 python-dotenv==0.21.0
@@ -15,7 +16,8 @@ requests==2.28.1
 six==1.16.0
 sqlparse==0.4.3
 tornado==6.1
+typing_extensions==4.4.0
 tzdata==2022.4
 tzlocal==4.2
 urllib3==1.26.12
-whois==0.9.16
+whois==0.9.21
