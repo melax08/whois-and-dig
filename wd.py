@@ -1,21 +1,24 @@
 import subprocess
 import datetime
 import re
-from typing import Tuple
+import os
+from typing import List, Tuple
 
 import idna
 import whois
+from dotenv import load_dotenv
 
 import messages
 from exceptions import BadDomain
+
+load_dotenv()
 
 ALLOWED_RECORDS: Tuple[str, ...] = ('TXT', 'A', 'MX', 'CNAME', 'AAAA', 'SOA',
                                     'DNAME', 'DS', 'NS', 'SRV', 'PTR', 'CAA',
                                     'TLSA')
 DEFAULT_TYPE: str = 'A'
-DNS_SERVERS: Tuple[str, ...] = ('8.8.8.8', '1.1.1.1', 'ns1.hostiman.ru',
-                                'ns2.hostiman.ru', 'ns3.hostiman.com',
-                                'ns4.hostiman.com')
+DNS_SERVERS: List[str] = os.getenv(
+    'DNS_SERVERS', default='8.8.8.8 1.1.1.1').split()
 LJ_VALUE: int = 20
 
 
@@ -115,7 +118,8 @@ class Domain:
             return query.__dict__
         return {'result': False}
 
-    def dig(self, record: str = DEFAULT_TYPE, custom_dns: tuple = ()) -> dict:
+    def dig(self, record: str = DEFAULT_TYPE, ns_list: tuple = DNS_SERVERS
+            ) -> dict:
         """Main dig method, Returns information
         about the specified entry on the specified name servers.
         """
@@ -129,10 +133,6 @@ class Domain:
             'result': True,
             'data': {}
         }
-        if custom_dns:
-            ns_list = custom_dns
-        else:
-            ns_list = DNS_SERVERS
         for server in ns_list:
             output['data'][server] = []
             temp = subprocess.run(

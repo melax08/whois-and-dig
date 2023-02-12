@@ -7,7 +7,7 @@ import whois
 sys.path.append('../../whois-and-dig')
 
 from .serializers import WhoisSerializer, DigSerializer, DigSettingsSerializer
-from wd import Domain, ALLOWED_RECORDS, DEFAULT_TYPE
+from wd import Domain, ALLOWED_RECORDS, DEFAULT_TYPE, DNS_SERVERS
 from exceptions import BadDomain
 
 
@@ -51,6 +51,8 @@ class Dig(APIView):
         domain = serializer.data.get('domain')
         record = serializer.data.get('record')
         custom_dns = serializer.data.get('dns')
+        if not custom_dns:
+            custom_dns = DNS_SERVERS
         try:
             dom = Domain(domain)
             dig_output = dom.dig(record, custom_dns)
