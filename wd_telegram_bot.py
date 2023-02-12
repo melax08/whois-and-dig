@@ -5,12 +5,12 @@ import whois
 from dotenv import load_dotenv
 from logging.handlers import RotatingFileHandler
 from telegram import Update
-from telegram.ext import (CommandHandler, Updater, MessageHandler,
-                          Filters, ContextTypes)
+from telegram.ext import (Application, CommandHandler, MessageHandler,
+                          filters, ContextTypes)
 
 import messages
 from exceptions import BadDomain
-from wd import Domain
+from wd import Domain, DEFAULT_TYPE
 
 load_dotenv()
 TOKEN: str = os.getenv('TOKEN')
@@ -26,25 +26,15 @@ formatter = logging.Formatter(
 )
 handler.setFormatter(formatter)
 
-updater = Updater(token=TOKEN)
+application = Application.builder().token(TOKEN).build()
 
 
 class WDTelegramBot:
-    def __init__(self, updater: Updater) -> None:
-        self.updater = updater
+    def __init__(self, application) -> None:
+        self.application = application
 
-    def send_message(self, message: str,
-                     context: ContextTypes.context,
-                     chat: Update.effective_chat) -> None:
-        """Send message to telegram bot."""
-        context.bot.send_message(chat_id=chat.id,
-                                 text=message,
-                                 disable_web_page_preview=True,
-                                 parse_mode='HTML'
-                                 )
-
-    def command_help(self, update: Update,
-                     context: ContextTypes.context) -> None:
+    async def command_help(self, update: Update,
+                           context: ContextTypes.context) -> None:
         """Send help information with telegram command handler."""
         chat = update.effective_chat
         info = update.message
@@ -52,85 +42,84 @@ class WDTelegramBot:
             logger.info(
                 f'Someone starts bot: {info.chat.username}, '
                 f'{info.chat.first_name} {info.chat.last_name}, {chat.id}')
-        context.bot.send_message(chat_id=chat.id, text=messages.help_text)
+        await info.reply_html(messages.help_text)
 
-    def wd_main(self, update: Update, context: ContextTypes.context) -> None:
+    async def wd_main(
+            self, update: Update, context: ContextTypes.context) -> None:
         """Main function for handle user requests and return whois&dig info."""
-        chat = update.effective_chat
         info = update.message
         edited_message = update.edited_message
         if edited_message:
             input_message = edited_message.text.split()
         else:
             input_message = info.text.split()
-        domain = ''
-        record_type = ''
+        domain = input_message[0]
         if len(input_message) == 2:
-            domain = input_message[0]
             record_type = input_message[1]
         elif len(input_message) == 1:
-            domain = input_message[0]
-            record_type = 'A'
-        if len(input_message) == 1 or len(input_message) == 2:
+            record_type = DEFAULT_TYPE
+        else:
+            await info.reply_html(messages.wrong_request)
+            return
+        try:
+            domain = Domain(domain)
+        except BadDomain as error:
+            logger.debug(messages.error_log.format(
+                info.chat.username,
+                input_message,
+                'Bad domain'))
+            await info.reply_text(str(error))
+        except Exception as error:
+            logger.error(messages.new_exception.format(
+                info.chat.username,
+                input_message,
+                error), exc_info=True)
+        else:
             try:
-                domain = Domain(domain)
-            except BadDomain as error:
+                if not edited_message:
+                    whois_output = domain.whois_tg_message()
+                    await info.reply_html(whois_output,
+                                          disable_web_page_preview=True)
+            except whois.exceptions.UnknownTld as error:
                 logger.debug(messages.error_log.format(
                     info.chat.username,
                     input_message,
-                    'Bad domain'))
-                self.send_message(str(error), context, chat)
+                    error))
+                await info.reply_html(messages.unknown_tld,
+                                      disable_web_page_preview=True)
+            except (
+                    whois.exceptions.WhoisPrivateRegistry,
+                    whois.exceptions.FailedParsingWhoisOutput,
+                    whois.exceptions.WhoisCommandFailed
+            ) as error:
+                logger.debug(messages.error_log.format(
+                    info.chat.username,
+                    input_message,
+                    error))
+                message = ('❗ Whois error: ' + str(error).rstrip()
+                           + '. Trying to dig...')
+                await info.reply_html(message,
+                                      disable_web_page_preview=True)
             except Exception as error:
                 logger.error(messages.new_exception.format(
                     info.chat.username,
                     input_message,
                     error), exc_info=True)
-            else:
-                try:
-                    if not edited_message:
-                        whois_output = domain.whois_tg_message()
-                        self.send_message(whois_output, context, chat)
-                except whois.exceptions.UnknownTld as error:
-                    logger.debug(messages.error_log.format(
-                        info.chat.username,
-                        input_message,
-                        error))
-                    self.send_message(messages.unknown_tld, context, chat)
-                except (
-                        whois.exceptions.WhoisPrivateRegistry,
-                        whois.exceptions.FailedParsingWhoisOutput,
-                        whois.exceptions.WhoisCommandFailed
-                ) as error:
-                    logger.debug(messages.error_log.format(
-                        info.chat.username,
-                        input_message,
-                        error))
-                    message = ('❗ Whois error: ' + str(error).rstrip()
-                               + '. Trying to dig...')
-                    self.send_message(message, context, chat)
-                except Exception as error:
-                    logger.error(messages.new_exception.format(
-                        info.chat.username,
-                        input_message,
-                        error), exc_info=True)
-                finally:
-                    dig_output = domain.dig_tg_message(record_type)
-                    self.send_message(dig_output, context, chat)
-                    del domain
-        else:
-            self.send_message(messages.wrong_request, context, chat)
+            finally:
+                dig_output = domain.dig_tg_message(record_type)
+                await info.reply_html(dig_output,
+                                      disable_web_page_preview=True)
 
     def run_telegram_pooling(self) -> None:
         """Create telegram handlers and start pooling."""
         logger.info('Start pooling')
-        self.updater.dispatcher.add_handler(
-            CommandHandler(['start', 'help'], self.command_help))
-        self.updater.dispatcher.add_handler(MessageHandler(Filters.text,
-                                                           self.wd_main))
-        self.updater.start_polling()
-        self.updater.idle()
+        self.application.add_handler(CommandHandler(
+            ['start', 'help'], self.command_help))
+        self.application.add_handler(MessageHandler(
+            filters.TEXT, self.wd_main))
+        application.run_polling()
 
 
 if __name__ == '__main__':
-    wd_bot = WDTelegramBot(updater)
+    wd_bot = WDTelegramBot(application)
     wd_bot.run_telegram_pooling()
