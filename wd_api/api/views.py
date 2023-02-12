@@ -1,10 +1,10 @@
+import sys
+
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-import sys
-sys.path.append('../../whois-and-dig')
-
 import whois
+sys.path.append('../../whois-and-dig')
 
 from .serializers import WhoisSerializer, DigSerializer, DigSettingsSerializer
 from wd import Domain, ALLOWED_RECORDS, DEFAULT_TYPE
