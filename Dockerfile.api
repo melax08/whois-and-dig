@@ -3,12 +3,17 @@
 
 FROM python:3.7-slim
 
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
 WORKDIR /app
 
-COPY requirements_api.txt wd.py exceptions.py messages.py .env wd_api .
+COPY requirements_api.txt wd.py exceptions.py messages.py wd_api entrypoint_api.sh .
 
+RUN chmod +x entrypoint_api.sh
+RUN pip3 install --upgrade pip
 RUN pip3 install -r  /app/requirements_api.txt --no-cache-dir
 
 RUN apt update && apt install -y dnsutils whois
 
-CMD ["gunicorn", "wd_api.wsgi:application", "--bind", "0:8000" ]
+ENTRYPOINT [ "/app/entrypoint_api.sh" ]
