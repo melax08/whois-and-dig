@@ -1,5 +1,7 @@
 # Whois & dig telegram bot and API
 
+## Information
+
 ### Description
 This project contains various handy representations of domain analysis utilities such as whois and dig.
 ### Content
@@ -12,6 +14,8 @@ This project contains various handy representations of domain analysis utilities
 * Python: 3.7+
 * Operating system: Linux or MacOS
 * Installed whois and dig (dnsutils) programs
+
+## Whois & Dig telegram bot
 
 ### How to install and use the bot manually:
 
@@ -86,3 +90,31 @@ docker run -it -d --name wd_tg_bot wd_tg_bot
 Example of tg bot conversation:
 
 ![tg_bot_example](https://2241.ru/scr/example_of_bot.jpeg)
+
+## Whois & Dig REST API
+
+### How to install WD REST API via docker
+
+1. Clone the repo and change directory to api_docker dir in it:
+
+```
+git clone https://github.com/melax08/whois-and-dig.git
+```
+
+```
+cd whois-and-dig/api_docker
+```
+2. Fill up the .env file, like .env_example file:
+
+```
+mv .env_example .env
+nano .env
+```
+3. Run docker-compose:
+```
+docker-compose up -d
+```
+4. Create the django superuser:
+```
+docker-compose exec backend python manage.py createsuperuser
+```
