@@ -118,3 +118,17 @@ docker-compose up -d
 ```
 docker-compose exec backend python manage.py createsuperuser
 ```
+5. Send POST-request to http://127.0.0.1/api/v1/get-token/ with JSON:
+```json
+{
+    "username": "YOUR-USERNAME",
+    "password": "YOUR-PASSWORD"
+}
+```
+
+* YOUR-USERNAME - your superuser username;
+* YOUR-PASSWORD - your superuser password;
+
+You will obtain token, use it to all future requests to API:
+
+- Specify the Authorization header with value: Token YOUR-TOKEN
