@@ -33,8 +33,9 @@ class WDTelegramBot:
     def __init__(self, application) -> None:
         self.application = application
 
-    async def command_help(self, update: Update,
-                           context: ContextTypes.context) -> None:
+    @staticmethod
+    async def command_help(update: Update, context: ContextTypes.context
+                           ) -> None:
         """Send help information with telegram command handler."""
         chat = update.effective_chat
         info = update.message
@@ -44,8 +45,8 @@ class WDTelegramBot:
                 f'{info.chat.first_name} {info.chat.last_name}, {chat.id}')
         await info.reply_html(messages.help_text)
 
-    async def wd_main(
-            self, update: Update, context: ContextTypes.context) -> None:
+    @staticmethod
+    async def wd_main(update: Update, context: ContextTypes.context) -> None:
         """Main function for handle user requests and return whois&dig info."""
         info = update.message
         edited_message = update.edited_message

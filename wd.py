@@ -22,24 +22,6 @@ DNS_SERVERS: List[str] = os.getenv(
 LJ_VALUE: int = 20
 
 
-def domain_encode(domain: str) -> str:
-    """Encode domain from IDN to punycode."""
-    try:
-        domain = idna.encode(domain)
-    except idna.core.InvalidCodepoint:
-        return domain
-    return domain.decode()
-
-
-def domain_decode(domain: str) -> str:
-    """Decode domain from punycode to IDN."""
-    try:
-        domain = idna.decode(domain)
-    except idna.core.InvalidCodepoint:
-        return domain
-    return domain
-
-
 class Domain:
     """The Domain class receive a raw URL, link, domain or whatever
     then find domain name with regexp and allow to use various methods to get
@@ -56,7 +38,7 @@ class Domain:
         domain = re.search(r'[.\w-]+\.[\w-]{2,}', domain)
         if domain:
             domain = domain.group(0)
-            domain = domain_encode(domain)
+            domain = self.domain_encode(domain)
             return domain
         else:
             raise BadDomain(messages.bad_domain)
@@ -65,7 +47,7 @@ class Domain:
         """Make whois query and brings the output to string
         which can be sent as a message to telegram.
         """
-        decoded_domain = domain_decode(self.domain)
+        decoded_domain = self.domain_decode(self.domain)
         query = whois.query(self.domain)
         if query:
             whois_information = '🔍 Here is whois information:'
@@ -73,7 +55,7 @@ class Domain:
                 whois_information += ('\nPunycode: '.ljust(LJ_VALUE)
                                       + f'<code>{query.name}</code>')
             whois_information += ('\nDomain: '.ljust(LJ_VALUE)
-                                  + domain_decode(query.name))
+                                  + self.domain_decode(query.name))
             for ns in query.name_servers:
                 whois_information += '\nNserver: '.ljust(LJ_VALUE) + ns
             if query.registrar:
@@ -97,7 +79,7 @@ class Domain:
 
     def whois_json(self) -> dict:
         """Make whois query and brings it to JSON output."""
-        decoded_domain = domain_decode(self.domain)
+        decoded_domain = self.domain_decode(self.domain)
         query = whois.query(self.domain)
         if query:
             query.result = True
@@ -173,3 +155,21 @@ class Domain:
             else:
                 message += '- empty -\n\n'
         return message
+
+    @staticmethod
+    def domain_encode(domain: str) -> str:
+        """Encode domain from IDN to punycode."""
+        try:
+            domain = idna.encode(domain)
+        except idna.core.InvalidCodepoint:
+            return domain
+        return domain.decode()
+
+    @staticmethod
+    def domain_decode(domain: str) -> str:
+        """Decode domain from punycode to IDN."""
+        try:
+            domain = idna.decode(domain)
+        except idna.core.InvalidCodepoint:
+            return domain
+        return domain
