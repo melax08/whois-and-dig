@@ -48,7 +48,7 @@ class Domain:
         which can be sent as a message to telegram.
         """
         decoded_domain = self.domain_decode(self.domain)
-        query = whois.query(self.domain)
+        query = whois.query(self.domain, force=True)
         if query:
             whois_information = '🔍 Here is whois information:'
             if decoded_domain != self.domain:
@@ -80,7 +80,7 @@ class Domain:
     def whois_json(self) -> dict:
         """Make whois query and brings it to JSON output."""
         decoded_domain = self.domain_decode(self.domain)
-        query = whois.query(self.domain)
+        query = whois.query(self.domain, force=True)
         if query:
             query.result = True
             if decoded_domain != self.domain:
