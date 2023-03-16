@@ -50,30 +50,30 @@ class Domain:
         decoded_domain = self.domain_decode(self.domain)
         query = whois.query(self.domain, force=True)
         if query:
-            whois_information = '🔍 Here is whois information:'
+            whois_information = ['🔍 Here is whois information:']
             if decoded_domain != self.domain:
-                whois_information += ('\nPunycode: '.ljust(LJ_VALUE)
-                                      + f'<code>{query.name}</code>')
-            whois_information += ('\nDomain: '.ljust(LJ_VALUE)
-                                  + self.domain_decode(query.name))
+                whois_information.append('Punycode: '.ljust(LJ_VALUE)
+                                         + f'<code>{query.name}</code>')
+            whois_information.append('Domain: '.ljust(LJ_VALUE)
+                                     + self.domain_decode(query.name))
             for ns in query.name_servers:
-                whois_information += '\nNserver: '.ljust(LJ_VALUE) + ns
+                whois_information.append('Nserver: '.ljust(LJ_VALUE) + ns)
             if query.registrar:
-                whois_information += ('\nRegistrar: '.ljust(LJ_VALUE)
-                                      + query.registrar)
+                whois_information.append('Registrar: '.ljust(LJ_VALUE)
+                                         + query.registrar)
             if query.creation_date:
-                whois_information += ('\nCreated: '.ljust(LJ_VALUE)
-                                      + str(query.creation_date))
+                whois_information.append('Created: '.ljust(LJ_VALUE)
+                                         + str(query.creation_date))
             if query.expiration_date:
                 if datetime.datetime.utcnow() < query.expiration_date:
-                    whois_information += ('\nExpires: '.ljust(LJ_VALUE)
-                                          + str(query.expiration_date)
-                                          + ' - active!')
+                    whois_information.append('Expires: '.ljust(LJ_VALUE)
+                                             + str(query.expiration_date)
+                                             + ' - active!')
                 else:
-                    whois_information += ('\nExpires: '.ljust(LJ_VALUE)
-                                          + str(query.expiration_date)
-                                          + '<b> - EXPIRED! 🛑</b>')
-            return whois_information
+                    whois_information.append('Expires: '.ljust(LJ_VALUE)
+                                             + str(query.expiration_date)
+                                             + '<b> - EXPIRED! 🛑</b>')
+            return '\n'.join(whois_information)
         else:
             return messages.domain_not_registred
 
@@ -144,17 +144,16 @@ class Domain:
         dig_output = self.dig(record=record)
         domain = dig_output.pop('domain')
         record = dig_output.pop('record')
-        message = f'🔍 Here is DIG {domain}:\n\n'
+        message = [f'🔍 Here is DIG {domain}:']
         for ns, results in dig_output['data'].items():
-            message += f'▫ {record} at {ns}:\n'
+            message.append(f'\n▫ {record} at {ns}:')
             if results:
                 for result in results:
                     content = result.get('content')
-                    message += content + '\n'
-                message += '\n'
+                    message.append(content)
             else:
-                message += '- empty -\n\n'
-        return message
+                message.append('- empty -')
+        return '\n'.join(message)
 
     @staticmethod
     def domain_encode(domain: str) -> str:
