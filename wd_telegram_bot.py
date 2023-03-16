@@ -49,11 +49,9 @@ class WDTelegramBot:
     async def wd_main(update: Update, context: ContextTypes.context) -> None:
         """Main function for handle user requests and return whois&dig info."""
         info = update.message
-        edited_message = update.edited_message
-        if edited_message:
-            input_message = edited_message.text.split()
-        else:
-            input_message = info.text.split()
+        if update.edited_message:
+            info = update.edited_message
+        input_message = info.text.split()
         domain = input_message[0]
         if len(input_message) == 2:
             record_type = input_message[1]
@@ -77,7 +75,7 @@ class WDTelegramBot:
                 error), exc_info=True)
         else:
             try:
-                if not edited_message:
+                if not update.edited_message:
                     whois_output = domain.whois_tg_message()
                     await info.reply_html(whois_output,
                                           disable_web_page_preview=True)
