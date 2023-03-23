@@ -4,9 +4,9 @@ import logging
 import whois
 from dotenv import load_dotenv
 from logging.handlers import RotatingFileHandler
-from telegram import Update
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (Application, CommandHandler, MessageHandler,
-                          filters, ContextTypes)
+                          filters, ContextTypes, CallbackQueryHandler)
 
 import messages
 from exceptions import BadDomain
@@ -28,10 +28,32 @@ handler.setFormatter(formatter)
 
 application = Application.builder().token(TOKEN).build()
 
+KEYBOARD = [
+        [
+            InlineKeyboardButton("A", callback_data="A"),
+            InlineKeyboardButton("AAAA", callback_data="AAAA"),
+            InlineKeyboardButton("CNAME", callback_data="CNAME"),
+            InlineKeyboardButton("TXT", callback_data="TXT"),
+            InlineKeyboardButton("MX", callback_data="MX"),
+            InlineKeyboardButton("SOA", callback_data="SOA"),
+
+
+        ],
+    ]
+
+dig_markup = InlineKeyboardMarkup(KEYBOARD)
+
 
 class WDTelegramBot:
     def __init__(self, application) -> None:
         self.application = application
+
+    async def dig_buttons(self, update, context):
+        """Processing buttons under dig message."""
+        query = update.callback_query
+        dig_output = self.domain.dig_tg_message(query.data)
+        # await query.answer()
+        await query.edit_message_text(text=dig_output, reply_markup=dig_markup)
 
     @staticmethod
     async def command_help(update: Update, context: ContextTypes.context
@@ -45,8 +67,8 @@ class WDTelegramBot:
                 f'{info.chat.first_name} {info.chat.last_name}, {chat.id}')
         await info.reply_html(messages.help_text)
 
-    @staticmethod
-    async def wd_main(update: Update, context: ContextTypes.context) -> None:
+    async def wd_main(
+            self, update: Update, context: ContextTypes.context) -> None:
         """Main function for handle user requests and return whois&dig info."""
         info = update.message
         if update.edited_message:
@@ -61,7 +83,7 @@ class WDTelegramBot:
             await info.reply_html(messages.wrong_request)
             return
         try:
-            domain = Domain(domain)
+            self.domain = Domain(domain)
         except BadDomain as error:
             logger.debug(messages.error_log.format(
                 info.chat.username,
@@ -76,7 +98,7 @@ class WDTelegramBot:
         else:
             try:
                 if not update.edited_message:
-                    whois_output = domain.whois_tg_message()
+                    whois_output = self.domain.whois_tg_message()
                     await info.reply_html(whois_output,
                                           disable_web_page_preview=True)
             except whois.exceptions.UnknownTld as error:
@@ -105,9 +127,10 @@ class WDTelegramBot:
                     input_message,
                     error), exc_info=True)
             finally:
-                dig_output = domain.dig_tg_message(record_type)
+                dig_output = self.domain.dig_tg_message(record_type)
                 await info.reply_html(dig_output,
-                                      disable_web_page_preview=True)
+                                      disable_web_page_preview=True,
+                                      reply_markup=dig_markup)
 
     def run_telegram_pooling(self) -> None:
         """Create telegram handlers and start pooling."""
@@ -116,6 +139,7 @@ class WDTelegramBot:
             ['start', 'help'], self.command_help))
         self.application.add_handler(MessageHandler(
             filters.TEXT, self.wd_main))
+        self.application.add_handler(CallbackQueryHandler(self.dig_buttons))
         application.run_polling()
 
 
