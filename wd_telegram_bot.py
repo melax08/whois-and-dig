@@ -28,32 +28,35 @@ handler.setFormatter(formatter)
 
 application = Application.builder().token(TOKEN).build()
 
-KEYBOARD = [
-        [
-            InlineKeyboardButton("A", callback_data="A"),
-            InlineKeyboardButton("AAAA", callback_data="AAAA"),
-            InlineKeyboardButton("CNAME", callback_data="CNAME"),
-            InlineKeyboardButton("TXT", callback_data="TXT"),
-            InlineKeyboardButton("MX", callback_data="MX"),
-            InlineKeyboardButton("SOA", callback_data="SOA"),
-
-
-        ],
-    ]
-
-dig_markup = InlineKeyboardMarkup(KEYBOARD)
-
 
 class WDTelegramBot:
     def __init__(self, application) -> None:
         self.application = application
 
-    async def dig_buttons(self, update, context):
+    @staticmethod
+    def create_dig_keyboard(domain: str) -> list:
+        """Create InlineKeyboard buttons for dig message."""
+        keyboard = [
+            InlineKeyboardButton("A", callback_data=f"{domain} A"),
+            InlineKeyboardButton("AAAA", callback_data=f"{domain} AAAA"),
+            InlineKeyboardButton("CNAME", callback_data=f"{domain} CNAME"),
+            InlineKeyboardButton("TXT", callback_data=f"{domain} TXT"),
+            InlineKeyboardButton("MX", callback_data=f"{domain} MX"),
+            InlineKeyboardButton("SOA", callback_data=f"{domain} SOA"),
+        ]
+        return keyboard
+
+    async def dig_buttons(self, update, context) -> None:
         """Processing buttons under dig message."""
         query = update.callback_query
-        dig_output = self.domain.dig_tg_message(query.data)
-        # await query.answer()
-        await query.edit_message_text(text=dig_output, reply_markup=dig_markup)
+        domain, record = query.data.split()
+        domain = Domain(domain)
+        dig_output = domain.dig_tg_message(record)
+        await query.edit_message_text(
+            text=dig_output,
+            reply_markup=InlineKeyboardMarkup.from_row(
+                self.create_dig_keyboard(str(domain)))
+        )
 
     @staticmethod
     async def command_help(update: Update, context: ContextTypes.context
@@ -83,7 +86,7 @@ class WDTelegramBot:
             await info.reply_html(messages.wrong_request)
             return
         try:
-            self.domain = Domain(domain)
+            domain = Domain(domain)
         except BadDomain as error:
             logger.debug(messages.error_log.format(
                 info.chat.username,
@@ -98,7 +101,7 @@ class WDTelegramBot:
         else:
             try:
                 if not update.edited_message:
-                    whois_output = self.domain.whois_tg_message()
+                    whois_output = domain.whois_tg_message()
                     await info.reply_html(whois_output,
                                           disable_web_page_preview=True)
             except whois.exceptions.UnknownTld as error:
@@ -127,10 +130,13 @@ class WDTelegramBot:
                     input_message,
                     error), exc_info=True)
             finally:
-                dig_output = self.domain.dig_tg_message(record_type)
-                await info.reply_html(dig_output,
-                                      disable_web_page_preview=True,
-                                      reply_markup=dig_markup)
+                dig_output = domain.dig_tg_message(record_type)
+                await info.reply_html(
+                    dig_output,
+                    disable_web_page_preview=True,
+                    reply_markup=InlineKeyboardMarkup.from_row(
+                        self.create_dig_keyboard(str(domain)))
+                )
 
     def run_telegram_pooling(self) -> None:
         """Create telegram handlers and start pooling."""

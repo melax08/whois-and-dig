@@ -32,6 +32,9 @@ class Domain:
         self.raw_site = raw_site
         self.domain = self.domain_getter()
 
+    def __str__(self):
+        return self.domain
+
     def domain_getter(self) -> str:
         """Lookup for domain in string and return it."""
         domain = self.raw_site.lower()
