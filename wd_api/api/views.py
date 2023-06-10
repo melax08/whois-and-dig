@@ -7,8 +7,9 @@ import whois
 sys.path.append('../../whois-and-dig')
 
 from .serializers import WhoisSerializer, DigSerializer, DigSettingsSerializer
-from wd import Domain, ALLOWED_RECORDS, DEFAULT_TYPE, DNS_SERVERS
+from constants import ALLOWED_RECORDS, DEFAULT_TYPE, DNS_SERVERS
 from exceptions import BadDomain
+from wd import Domain
 
 
 class Whois(APIView):

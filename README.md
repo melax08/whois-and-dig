@@ -58,7 +58,7 @@ echo 'TOKEN=HERE-IS-YOUR-TELEGRAM-TOKEN' > .env
 Start the bot:
 
 ```
-python3 wd_bot.py
+python3 wd_telegram_bot.py
 ```
 
 ### How to run telegram bot via docker:

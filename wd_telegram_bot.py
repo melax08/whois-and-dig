@@ -1,9 +1,4 @@
-import os
-import logging
-
 import whois
-from dotenv import load_dotenv
-from logging.handlers import RotatingFileHandler
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (Application, CommandHandler, MessageHandler,
                           filters, ContextTypes, CallbackQueryHandler)
@@ -11,22 +6,8 @@ from telegram.ext import (Application, CommandHandler, MessageHandler,
 import messages
 from exceptions import BadDomain
 from wd import Domain, DEFAULT_TYPE
-
-load_dotenv()
-TOKEN: str = os.getenv('TOKEN')
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-log_file = 'wd_bot.log'
-log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), log_file)
-handler = RotatingFileHandler(log_path, maxBytes=50000000, backupCount=5)
-logger.addHandler(handler)
-formatter = logging.Formatter(
-    '%(asctime)s - %(levelname)s - %(message)s'
-)
-handler.setFormatter(formatter)
-
-application = Application.builder().token(TOKEN).build()
+from configs import configure_tg_bot_logging
+from constants import TOKEN
 
 
 class WDTelegramBot:
@@ -150,5 +131,7 @@ class WDTelegramBot:
 
 
 if __name__ == '__main__':
+    logger = configure_tg_bot_logging()
+    application = Application.builder().token(TOKEN).build()
     wd_bot = WDTelegramBot(application)
     wd_bot.run_telegram_pooling()

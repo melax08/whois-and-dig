@@ -1,25 +1,13 @@
 import subprocess
 import datetime
 import re
-import os
-from typing import List, Tuple
 
 import idna
 import whois
-from dotenv import load_dotenv
 
 import messages
 from exceptions import BadDomain
-
-load_dotenv()
-
-ALLOWED_RECORDS: Tuple[str, ...] = ('TXT', 'A', 'MX', 'CNAME', 'AAAA', 'SOA',
-                                    'DNAME', 'DS', 'NS', 'SRV', 'PTR', 'CAA',
-                                    'TLSA')
-DEFAULT_TYPE: str = 'A'
-DNS_SERVERS: List[str] = os.getenv(
-    'DNS_SERVERS', default='8.8.8.8 1.1.1.1').split()
-LJ_VALUE: int = 20
+from constants import ALLOWED_RECORDS, DEFAULT_TYPE, DNS_SERVERS, LJ_VALUE
 
 
 class Domain:

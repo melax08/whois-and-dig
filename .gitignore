@@ -132,3 +132,4 @@ dmypy.json
 .idea/
 wd_bot.log*
 config/gunicorn/*
+logs/
