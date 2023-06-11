@@ -52,13 +52,13 @@ pip install -r requirements.txt
 Create .env file and add your telegram bot token to it (see .env_example):
 
 ```
-echo 'TOKEN=HERE-IS-YOUR-TELEGRAM-TOKEN' > .env
+echo 'TOKEN=HERE-IS-YOUR-TELEGRAM-TOKEN' > src/.env
 ```
 
 Start the bot:
 
 ```
-python3 wd_telegram_bot.py
+python3 src/wd_telegram_bot.py
 ```
 
 ### How to run telegram bot via docker:
@@ -75,7 +75,7 @@ cd whois-and-dig
 Create .env file and add your telegram bot token to it (see .env_example):
 
 ```
-echo 'TOKEN=HERE-IS-YOUR-TELEGRAM-TOKEN' > .env
+echo 'TOKEN=HERE-IS-YOUR-TELEGRAM-TOKEN' > src/.env
 ```
 
 Build the image by Dockerfile.bot:
@@ -84,7 +84,7 @@ docker build -t wd_tg_bot -f Dockerfile.bot .
 ```
 Create and run docker container:
 ```
-docker run -it -d --name wd_tg_bot wd_tg_bot
+docker run -it -d -v ${PWD}/logs:/app/logs --name wd_tg_bot wd_tg_bot
 ```
 
 Example of tg bot conversation:

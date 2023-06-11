@@ -1,14 +1,14 @@
 # This Dockerfile is needed to create the image of whois & dig REST API.
 # docker build -t wd_tg_api -f Dockerfile.api .
 
-FROM python:3.7-slim
+FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 WORKDIR /app
 
-COPY requirements_api.txt wd.py exceptions.py messages.py wd_api entrypoint_api.sh .
+COPY requirements_api.txt entrypoint_api.sh src .
 
 RUN chmod +x entrypoint_api.sh
 RUN pip3 install --upgrade pip

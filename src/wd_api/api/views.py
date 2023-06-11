@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 import whois
-sys.path.append('../../whois-and-dig')
+sys.path.append('../')
 
 from .serializers import WhoisSerializer, DigSerializer, DigSettingsSerializer
 from constants import ALLOWED_RECORDS, DEFAULT_TYPE, DNS_SERVERS
