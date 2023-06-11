@@ -7,7 +7,7 @@ import messages
 from exceptions import BadDomain
 from wd import Domain, DEFAULT_TYPE
 from configs import configure_tg_bot_logging
-from constants import TOKEN
+from constants import TOKEN, MAX_DOMAIN_LEN_TO_BUTTONS
 
 
 class WDTelegramBot:
@@ -112,11 +112,14 @@ class WDTelegramBot:
                     error), exc_info=True)
             finally:
                 dig_output = domain.dig_tg_message(record_type)
+                reply_markup = None
+                if len(domain.domain) <= MAX_DOMAIN_LEN_TO_BUTTONS:
+                    reply_markup = InlineKeyboardMarkup.from_row(
+                        self.create_dig_keyboard(str(domain)))
                 await info.reply_html(
                     dig_output,
                     disable_web_page_preview=True,
-                    reply_markup=InlineKeyboardMarkup.from_row(
-                        self.create_dig_keyboard(str(domain)))
+                    reply_markup=reply_markup
                 )
 
     def run_telegram_pooling(self) -> None:

@@ -13,3 +13,7 @@ ALLOWED_RECORDS: Tuple[str, ...] = ('TXT', 'A', 'MX', 'CNAME', 'AAAA', 'SOA',
                                     'TLSA')
 DEFAULT_TYPE: str = 'A'
 LJ_VALUE: int = 20
+
+# Max callback_data len is 64 bytes (len of domain + ' CNAME' should be <= 64).
+# https://core.telegram.org/bots/api#inlinekeyboardbutton
+MAX_DOMAIN_LEN_TO_BUTTONS = 58
