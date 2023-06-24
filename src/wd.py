@@ -1,6 +1,7 @@
 import subprocess
 import datetime
 import re
+from typing import Union
 
 import idna
 import whois
@@ -91,8 +92,8 @@ class Domain:
             return query.__dict__
         return {'result': False}
 
-    def dig(self, record: str = DEFAULT_TYPE, ns_list: tuple = DNS_SERVERS
-            ) -> dict:
+    def dig(self, record: str = DEFAULT_TYPE,
+            ns_list: Union[tuple, list] = DNS_SERVERS) -> dict:
         """Main dig method, Returns information
         about the specified entry on the specified name servers.
         """
