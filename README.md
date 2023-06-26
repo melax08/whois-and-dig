@@ -15,6 +15,15 @@ This project contains various handy representations of domain analysis utilities
 * Operating system: Linux or MacOS
 * Installed whois and dig (dnsutils) programs
 
+### Tech stack:
+For bot: 
+* python-telegram-bot as telegram API interface. 
+
+For API: 
+* Flask as API backend; 
+* Gunicorn as WSGI server; 
+* Nginx as web-server.
+
 ## Whois & Dig telegram bot
 
 ### How to install and use the bot manually:
@@ -114,21 +123,30 @@ nano .env
 ```
 docker-compose up -d
 ```
-4. Create the django superuser:
-```
-docker-compose exec backend python manage.py createsuperuser
-```
-5. Send POST-request to http://127.0.0.1/api/v1/get-token/ with JSON:
-```json
-{
-    "username": "YOUR-USERNAME",
-    "password": "YOUR-PASSWORD"
-}
+
+### API usage:
+With default nginx config, API runs on http://127.0.0.1.
+
+If you want the api to work on a dedicated ip address, or on a domain, change the directive **server_name** in **api_docker/nginx/default.conf** file.
+
+### Example of requests to the working API:
+
+
+Get dig settings like default type or allowed records:
+```shell
+curl -X GET http://127.0.0.1/api/v1/dig/settings/
 ```
 
-* YOUR-USERNAME - your superuser username;
-* YOUR-PASSWORD - your superuser password;
+Get dig information about A-records on domain google.com on DNS-servers 1.1.1.1 and 8.8.8.8
+```shell
+curl -X POST http://127.0.0.1/api/v1/dig/ \
+-H "Content-Type: application/json" \
+-d '{"domain": "google.com", "record": "A", "dns": ["1.1.1.1", "8.8.8.8"]}'
+```
 
-You will obtain token, use it to all future requests to API:
-
-- Specify the Authorization header with value: Token YOUR-TOKEN
+Get whois information about domain google.com:
+```shell
+curl -X POST http://127.0.0.1/api/v1/whois/ \
+-H "Content-Type: application/json" \
+-d '{"domain": "google.com"}'
+```
