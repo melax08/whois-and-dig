@@ -133,3 +133,4 @@ dmypy.json
 wd_bot.log*
 config/gunicorn/*
 logs/
+.DS_Store
