@@ -13,7 +13,6 @@ ALLOWED_RECORDS: List[str] = os.getenv(
     default='TXT A MX CNAME AAAA SOA DNAME DS NS SRV PTR CAA TLSA'
 ).split()
 DEFAULT_TYPE: str = os.getenv('DEFAULT_TYPE', default='A')
-LJ_VALUE: int = 20
 
 # Max callback_data len is 64 bytes (len of domain + ' CNAME' should be <= 64).
 # https://core.telegram.org/bots/api#inlinekeyboardbutton

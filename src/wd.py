@@ -8,7 +8,7 @@ import whois
 
 import messages
 from exceptions import BadDomain
-from constants import ALLOWED_RECORDS, DEFAULT_TYPE, DNS_SERVERS, LJ_VALUE
+from constants import ALLOWED_RECORDS, DEFAULT_TYPE, DNS_SERVERS
 
 
 class Domain:
@@ -43,28 +43,33 @@ class Domain:
         query = whois.query(self.domain, force=True)
         if query:
             whois_information = ['🔍 Here is whois information:']
+
             if decoded_domain != self.domain:
-                whois_information.append('Punycode: '.ljust(LJ_VALUE)
-                                         + f'<code>{query.name}</code>')
-            whois_information.append('Domain: '.ljust(LJ_VALUE)
-                                     + self.domain_decode(query.name))
-            for ns in query.name_servers:
-                whois_information.append('Nserver: '.ljust(LJ_VALUE) + ns)
+                whois_information.append(
+                    f'{"Punycode:":20}<code>{query.name}</code>')
+
+            whois_information.append(
+                f'{"Domain:":20}{self.domain_decode(query.name)}')
+
+            whois_information.extend(
+                [f'{"Nserver:":20}{ns}' for ns in query.name_servers])
+
             if query.registrar:
-                whois_information.append('Registrar: '.ljust(LJ_VALUE)
-                                         + query.registrar)
+                whois_information.append(f'{"Registrar:":20}{query.registrar}')
+
             if query.creation_date:
-                whois_information.append('Created: '.ljust(LJ_VALUE)
-                                         + str(query.creation_date))
+                whois_information.append(
+                    f'{"Created:":20}{query.creation_date}')
+
             if query.expiration_date:
                 if datetime.datetime.utcnow() < query.expiration_date:
-                    whois_information.append('Expires: '.ljust(LJ_VALUE)
-                                             + str(query.expiration_date)
-                                             + ' - active!')
+                    whois_information.append(
+                        f'{"Expires:":20}{query.expiration_date} - active!')
                 else:
-                    whois_information.append('Expires: '.ljust(LJ_VALUE)
-                                             + str(query.expiration_date)
-                                             + '<b> - EXPIRED! 🛑</b>')
+                    whois_information.append(
+                        f'{"Expires:":20}{query.expiration_date}'
+                        f'<b> - EXPIRED! 🛑</b>'
+                    )
             return '\n'.join(whois_information)
         else:
             return messages.domain_not_registred
@@ -90,7 +95,10 @@ class Domain:
             if query.creation_date:
                 query.creation_date = int(query.creation_date.timestamp())
             return query.__dict__
-        return {'result': False}
+        return {
+            'result': False,
+            'message': 'No entries found for the selected source'
+        }
 
     def dig(self, record: str = DEFAULT_TYPE,
             ns_list: Union[tuple, list] = DNS_SERVERS) -> dict:
