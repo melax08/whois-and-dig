@@ -14,19 +14,25 @@ This project contains various handy representations of domain analysis utilities
 * Python: 3.7+
 * Operating system: Linux or MacOS
 * Installed whois and dig (dnsutils) programs
+* Docker (19.03.0+) with docker compose for easy run API
 
 ### Tech stack:
 For bot: 
 * python-telegram-bot as telegram API interface. 
 
 For API: 
-* Flask as API backend; 
-* Gunicorn as WSGI server; 
+* FastAPI as API backend; 
+* Uvicorn as ASGI server; 
 * Nginx as web-server.
 
 ## Whois & Dig telegram bot
 
 ### How to install and use the bot manually:
+
+<details>
+<summary>
+Instruction
+</summary>
 
 Clone the repo and change directory to it:
 
@@ -70,7 +76,16 @@ Start the bot:
 python3 src/wd_telegram_bot.py
 ```
 
+</details>
+
+
 ### How to run telegram bot via docker:
+
+<details>
+<summary>
+Instruction
+</summary>
+
 Clone the repo and change directory to it:
 
 ```
@@ -96,13 +111,21 @@ Create and run docker container:
 docker run -it -d -v ${PWD}/logs:/app/logs --name wd_tg_bot wd_tg_bot
 ```
 
+</details>
+
+
 Example of tg bot conversation:
 
-![tg_bot_example](https://2241.ru/scr/example_of_bot.jpeg)
+![bot_example.png](readme_imgs/bot_example.png)
 
 ## Whois & Dig REST API
 
 ### How to install WD REST API via docker
+
+<details>
+<summary>
+Instruction
+</summary>
 
 1. Clone the repo and change directory to api_docker dir in it:
 
@@ -124,13 +147,16 @@ nano .env
 docker-compose up -d
 ```
 
+</details>
+
 ### API usage:
 With default nginx config, API runs on http://127.0.0.1.
 
 If you want the api to work on a dedicated ip address, or on a domain, change the directive **server_name** in **api_docker/nginx/default.conf** file.
 
-### Example of requests to the working API:
+In a running application, you can find the **swagger documentation** along the path: http://127.0.0.1/docs
 
+### Example of requests to the working API:
 
 Get dig settings like default type or allowed records:
 ```shell

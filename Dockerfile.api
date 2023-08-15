@@ -15,4 +15,4 @@ RUN pip3 install -r  /app/requirements_api.txt --no-cache-dir
 
 RUN apt update && apt install -y dnsutils whois
 
-CMD ["gunicorn", "wd_api:app", "--bind", "0:8000"]
+CMD ["uvicorn", "wd_api.main:app", "--host", "0.0.0.0", "--port", "8000"]
