@@ -13,9 +13,10 @@ from constants import (ALLOWED_RECORDS, DEFAULT_TYPE, DNS_SERVERS, DIG_TIMEOUT,
 
 
 class Domain:
-    """The Domain class receive a raw URL, link, domain or whatever
-    then find domain name with regexp and allow to use various methods to get
-    information about domain.
+    """
+    The Domain class receives a raw URL, link, domain or whatever, then
+    extracts the domain name from it using regexp. After this, allows to use
+    various methods to get the information about extracted domain.
     """
     DOMAIN_REGEXP: str = r'[.\w-]+\.[\w-]{2,}'
     DIG_QUERY_COLUMN: int = 4
@@ -28,80 +29,87 @@ class Domain:
         return self.domain
 
     def domain_getter(self) -> str:
-        """Lookup for domain in string and return it."""
+        """Looks up the domain in the provided string. Returns it if found."""
         domain = self.raw_site.lower()
         domain = re.search(self.DOMAIN_REGEXP, domain)
-        if domain:
-            domain = domain.group(0)
-            domain = self.domain_encode(domain)
-            return domain
-        else:
+
+        if not domain:
             raise BadDomain(messages.BAD_DOMAIN)
 
+        domain = self.domain_encode(domain.group())
+        return domain
+
     def whois_tg_message(self) -> str:
-        """Make whois query and brings the output to string
-        which can be sent as a message to telegram.
-        """
+        """Gets whois information about domain, then creates the telegram
+        message with this information."""
         decoded_domain = self.domain_decode(self.domain)
         query = whois.query(self.domain, force=True)
-        if query:
-            whois_information = [messages.WHOIS_TG_LABEL]
 
-            if decoded_domain != self.domain:
-                whois_information.append(
-                    f'{"Punycode:":20}<code>{query.name}</code>')
-
-            whois_information.append(
-                f'{"Domain:":20}{self.domain_decode(query.name)}')
-
-            whois_information.extend(
-                [f'{"Nserver:":20}{ns}' for ns in query.name_servers])
-
-            if query.registrar:
-                whois_information.append(f'{"Registrar:":20}{query.registrar}')
-
-            if query.creation_date:
-                whois_information.append(
-                    f'{"Created:":20}{query.creation_date}')
-
-            if query.expiration_date:
-                if datetime.datetime.utcnow() < query.expiration_date:
-                    whois_information.append(
-                        f'{"Expires:":20}{query.expiration_date} - active!')
-                else:
-                    whois_information.append(
-                        f'{"Expires:":20}{query.expiration_date}'
-                        f'<b> - EXPIRED! 🛑</b>'
-                    )
-            return '\n'.join(whois_information)
-        else:
+        if not query:
             return messages.DOMAIN_NOT_REGISTERED
 
+        whois_information = [messages.WHOIS_TG_LABEL]
+
+        if decoded_domain != self.domain:
+            whois_information.append(
+                f'{"Punycode:":20}<code>{self.domain}</code>')
+
+        whois_information.append(
+            f'{"Domain:":20}{self.domain_decode(query.name)}')
+
+        whois_information.extend(
+            [f'{"Nserver:":20}{ns}' for ns in query.name_servers])
+
+        if query.registrar:
+            whois_information.append(f'{"Registrar:":20}{query.registrar}')
+
+        if query.creation_date:
+            whois_information.append(
+                f'{"Created:":20}{query.creation_date}')
+
+        if query.expiration_date:
+            if datetime.datetime.utcnow() < query.expiration_date:
+                whois_information.append(
+                    f'{"Expires:":20}{query.expiration_date} - active!')
+            else:
+                whois_information.append(
+                    f'{"Expires:":20}{query.expiration_date}'
+                    f'<b> - EXPIRED! 🛑</b>'
+                )
+
+        if query.status:
+            whois_information.append(f'{"Statuses:":20}{query.status}')
+
+        return '\n'.join(whois_information)
+
     def whois_json(self) -> dict:
-        """Make whois query and brings it to JSON output."""
+        """Makes whois query and brings it to the JSON format output."""
         decoded_domain = self.domain_decode(self.domain)
         query = whois.query(self.domain, force=True)
-        if query:
-            query.result = True
-            if decoded_domain != self.domain:
-                query.name_IDN = decoded_domain
+
+        if not query:
+            return {
+                'result': False,
+                'message': messages.NO_QUERY,
+            }
+
+        query.result = True
+        if decoded_domain != self.domain:
+            query.name_IDN = decoded_domain
+        else:
+            query.name_IDN = None
+        if query.expiration_date:
+            if datetime.datetime.utcnow() < query.expiration_date:
+                query.is_active = True
             else:
-                query.name_IDN = None
-            if query.expiration_date:
-                if datetime.datetime.utcnow() < query.expiration_date:
-                    query.is_active = True
-                else:
-                    query.is_active = False
-                query.expiration_date = int(query.expiration_date.timestamp())
-            else:
-                query.is_active = None
-            if query.creation_date:
-                query.creation_date = int(query.creation_date.timestamp())
-            return query.__dict__
-        return {
-            'result': False,
-            'message': messages.NO_QUERY,
-        }
+                query.is_active = False
+            query.expiration_date = int(query.expiration_date.timestamp())
+        else:
+            query.is_active = None
+        if query.creation_date:
+            query.creation_date = int(query.creation_date.timestamp())
+
+        return query.__dict__
 
     async def _dig_task(self, server: str, record: str, output: dict):
         """Coroutine for dig request to specified DNS-server."""
@@ -131,8 +139,8 @@ class Domain:
     async def dig(
             self, record: str = DEFAULT_TYPE, ns_list: Tuple[str] = DNS_SERVERS
     ) -> dict:
-        """Main dig coroutine. Creates tasks for digging all the DNS_SERVERS
-        and returns information about results."""
+        """Main dig coroutine. Create tasks for digging all the DNS_SERVERS
+        and returns information with results."""
         record = record.upper()
 
         if record not in ALLOWED_RECORDS:
@@ -161,11 +169,11 @@ class Domain:
         for ns, results in dig_output['data'].items():
             message.append(messages.DIG_RECORD_AT_NS.format(record, ns))
             if results:
-                for result in results:
-                    content = result.get('content')
-                    message.append(content)
+                current_results = [result.get('content') for result in results]
+                message.extend(current_results)
             else:
                 message.append(messages.DIG_EMPTY_RESPONSE)
+
         return '\n'.join(message)
 
     @staticmethod

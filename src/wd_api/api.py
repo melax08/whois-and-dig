@@ -2,7 +2,7 @@ from fastapi import APIRouter
 import whois
 
 from .schemas import DomainDig, DomainWhois, DigSettings
-from . import DEFAULT_TYPE, DNS_SERVERS, Domain, BadDomain, ALLOWED_RECORDS
+from . import DEFAULT_TYPE, Domain, BadDomain, ALLOWED_RECORDS
 
 router = APIRouter()
 

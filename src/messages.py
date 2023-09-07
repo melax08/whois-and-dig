@@ -3,15 +3,15 @@ from constants import ALLOWED_RECORDS
 # Information messages
 WRONG_REQUEST = '❗ You send the wrong request. Maybe you need some /help?'
 HELP_TEXT = (
-    f'<b>How to use</b>\n\n ✅ '
-     'Correct:\n '
-     'example.com A\n '
-     'http://example.com/ TXT\n '
-     'site.ru\n\n '
-     '❌ Wrong:\n'
-     'A example.com\n '
-     'example.com A TXT MX\n\n'
-     f'Allowed <b>dig</b> records to check: {", ".join(ALLOWED_RECORDS)}'
+    '<b>How to use</b>\n\n ✅ '
+    'Correct:\n'
+    'example.com A\n'
+    'http://example.com/ TXT\n'
+    'site.ru\n\n'
+    '❌ Wrong:\n'
+    'A example.com\n'
+    'example.com A TXT MX\n\n'
+    f'Allowed <b>dig</b> records to check: {", ".join(ALLOWED_RECORDS)}'
 )
 
 # Domain problems

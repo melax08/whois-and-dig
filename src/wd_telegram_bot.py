@@ -33,7 +33,7 @@ class WDTelegramBot:
         query = update.callback_query
         domain, record = query.data.split()
         domain = Domain(domain)
-        dig_output = domain.dig_tg_message(record)
+        dig_output = await domain.dig_tg_message(record)
         await query.edit_message_text(
             text=dig_output,
             reply_markup=InlineKeyboardMarkup.from_row(
@@ -65,6 +65,7 @@ class WDTelegramBot:
         else:
             await info.reply_html(messages.WRONG_REQUEST)
             return
+
         try:
             domain = Domain(domain)
         except BadDomain as error:
