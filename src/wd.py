@@ -1,14 +1,15 @@
-import subprocess
+import asyncio
 import datetime
 import re
-from typing import Union
+from typing import Tuple
 
 import idna
 import whois
 
 import messages
 from exceptions import BadDomain
-from constants import ALLOWED_RECORDS, DEFAULT_TYPE, DNS_SERVERS
+from constants import (ALLOWED_RECORDS, DEFAULT_TYPE, DNS_SERVERS, DIG_TIMEOUT,
+                       SHELL_OUTPUT_ENCODING)
 
 
 class Domain:
@@ -16,6 +17,8 @@ class Domain:
     then find domain name with regexp and allow to use various methods to get
     information about domain.
     """
+    DOMAIN_REGEXP: str = r'[.\w-]+\.[\w-]{2,}'
+    DIG_QUERY_COLUMN: int = 4
 
     def __init__(self, raw_site: str) -> None:
         self.raw_site = raw_site
@@ -27,13 +30,13 @@ class Domain:
     def domain_getter(self) -> str:
         """Lookup for domain in string and return it."""
         domain = self.raw_site.lower()
-        domain = re.search(r'[.\w-]+\.[\w-]{2,}', domain)
+        domain = re.search(self.DOMAIN_REGEXP, domain)
         if domain:
             domain = domain.group(0)
             domain = self.domain_encode(domain)
             return domain
         else:
-            raise BadDomain(messages.bad_domain)
+            raise BadDomain(messages.BAD_DOMAIN)
 
     def whois_tg_message(self) -> str:
         """Make whois query and brings the output to string
@@ -42,7 +45,7 @@ class Domain:
         decoded_domain = self.domain_decode(self.domain)
         query = whois.query(self.domain, force=True)
         if query:
-            whois_information = ['🔍 Here is whois information:']
+            whois_information = [messages.WHOIS_TG_LABEL]
 
             if decoded_domain != self.domain:
                 whois_information.append(
@@ -72,7 +75,7 @@ class Domain:
                     )
             return '\n'.join(whois_information)
         else:
-            return messages.domain_not_registred
+            return messages.DOMAIN_NOT_REGISTERED
 
     def whois_json(self) -> dict:
         """Make whois query and brings it to JSON output."""
@@ -97,62 +100,72 @@ class Domain:
             return query.__dict__
         return {
             'result': False,
-            'message': 'No entries found for the selected source'
+            'message': messages.NO_QUERY,
         }
 
-    def dig(self, record: str = DEFAULT_TYPE,
-            ns_list: Union[tuple, list] = DNS_SERVERS) -> dict:
-        """Main dig method, Returns information
-        about the specified entry on the specified name servers.
-        """
-        if record:
-            record = record.upper()
+    async def _dig_task(self, server: str, record: str, output: dict):
+        """Coroutine for dig request to specified DNS-server."""
+        output['data'][server] = []
+        proc = await asyncio.create_subprocess_exec(
+            'dig',
+            '+noall',
+            '+answer',
+            self.domain,
+            f'@{server}',
+            record,
+            f'+timeout={DIG_TIMEOUT}',
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout, stderr = await proc.communicate()
+        temp_output = stdout.decode(SHELL_OUTPUT_ENCODING)
+        temp_output = re.sub('"', '', temp_output)
+        for result in temp_output.splitlines():
+            query = result.split(maxsplit=self.DIG_QUERY_COLUMN)
+            new_result = {
+                'ttl': query[1],
+                'content': query[4]
+            }
+            output['data'][server].append(new_result)
+
+    async def dig(
+            self, record: str = DEFAULT_TYPE, ns_list: Tuple[str] = DNS_SERVERS
+    ) -> dict:
+        """Main dig coroutine. Creates tasks for digging all the DNS_SERVERS
+        and returns information about results."""
+        record = record.upper()
+
         if record not in ALLOWED_RECORDS:
             record = DEFAULT_TYPE
+
         output = {
             'domain': self.domain,
             'record': record,
             'result': True,
             'data': {}
         }
-        for server in ns_list:
-            output['data'][server] = []
-            temp = subprocess.run(
-                [
-                    'dig',
-                    '+noall',
-                    '+answer',
-                    self.domain,
-                    f'@{server}',
-                    record,
-                    '+timeout=3'
-                ],
-                stdout=subprocess.PIPE
-            )
-            temp_output = temp.stdout.decode('utf-8')
-            temp_output = re.sub('"', '', temp_output)
-            for result in temp_output.splitlines():
-                query = result.split(maxsplit=4)
-                new_result = {
-                    'ttl': query[1],
-                    'content': query[4]
-                }
-                output['data'][server].append(new_result)
+
+        tasks = [asyncio.ensure_future(
+            self._dig_task(server, record, output)) for server in ns_list]
+        await asyncio.wait(tasks)
+
         return output
 
-    def dig_tg_message(self, record: str = DEFAULT_TYPE) -> str:
-        dig_output = self.dig(record=record)
+    async def dig_tg_message(self, record: str = DEFAULT_TYPE) -> str:
+        """Generates telegram message with dig information about domain."""
+        dig_output = await self.dig(record=record)
         domain = dig_output.pop('domain')
         record = dig_output.pop('record')
-        message = [f'🔍 Here is DIG {domain}:']
+
+        message = [messages.DIG_TG_LABEL.format(domain)]
         for ns, results in dig_output['data'].items():
-            message.append(f'\n▫ {record} at {ns}:')
+            message.append(messages.DIG_RECORD_AT_NS.format(record, ns))
             if results:
                 for result in results:
                     content = result.get('content')
                     message.append(content)
             else:
-                message.append('- empty -')
+                message.append(messages.DIG_EMPTY_RESPONSE)
         return '\n'.join(message)
 
     @staticmethod

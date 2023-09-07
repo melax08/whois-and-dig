@@ -1,3 +1,4 @@
+import logging
 import whois
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (Application, CommandHandler, MessageHandler,
@@ -6,7 +7,7 @@ from telegram.ext import (Application, CommandHandler, MessageHandler,
 import messages
 from exceptions import BadDomain
 from wd import Domain, DEFAULT_TYPE
-from configs import configure_tg_bot_logging
+from logger import configure_logging
 from constants import TOKEN, MAX_DOMAIN_LEN_TO_BUTTONS
 
 
@@ -44,12 +45,10 @@ class WDTelegramBot:
                            ) -> None:
         """Send help information with telegram command handler."""
         chat = update.effective_chat
-        info = update.message
-        if info.text == '/start':
-            logger.info(
-                f'Someone starts bot: {info.chat.username}, '
-                f'{info.chat.first_name} {info.chat.last_name}, {chat.id}')
-        await info.reply_html(messages.help_text)
+        if update.message.text == '/start':
+            logging.info(messages.SOMEONE_STARTS_BOT.format(
+                chat.username, chat.first_name, chat.last_name, chat.id))
+        await update.message.reply_html(messages.HELP_TEXT)
 
     async def wd_main(
             self, update: Update, context: ContextTypes.context) -> None:
@@ -64,18 +63,18 @@ class WDTelegramBot:
         elif len(input_message) == 1:
             record_type = DEFAULT_TYPE
         else:
-            await info.reply_html(messages.wrong_request)
+            await info.reply_html(messages.WRONG_REQUEST)
             return
         try:
             domain = Domain(domain)
         except BadDomain as error:
-            logger.debug(messages.error_log.format(
+            logging.info(messages.ERROR_LOG.format(
                 info.chat.username,
                 input_message,
-                'Bad domain'))
+                messages.BAD_DOMAIN_LOG))
             await info.reply_text(str(error))
         except Exception as error:
-            logger.error(messages.new_exception.format(
+            logging.error(messages.NEW_EXCEPTION.format(
                 info.chat.username,
                 input_message,
                 error), exc_info=True)
@@ -86,32 +85,31 @@ class WDTelegramBot:
                     await info.reply_html(whois_output,
                                           disable_web_page_preview=True)
             except whois.exceptions.UnknownTld as error:
-                logger.debug(messages.error_log.format(
+                logging.info(messages.ERROR_LOG.format(
                     info.chat.username,
                     input_message,
                     error))
-                await info.reply_html(messages.unknown_tld,
+                await info.reply_html(messages.UNKNOWN_TLD,
                                       disable_web_page_preview=True)
             except (
                     whois.exceptions.WhoisPrivateRegistry,
                     whois.exceptions.FailedParsingWhoisOutput,
                     whois.exceptions.WhoisCommandFailed
             ) as error:
-                logger.debug(messages.error_log.format(
+                logging.info(messages.ERROR_LOG.format(
                     info.chat.username,
                     input_message,
                     error))
-                message = ('❗ Whois error: ' + str(error).rstrip()
-                           + '. Trying to dig...')
+                message = messages.WHOIS_ERROR.format(str(error).rstrip())
                 await info.reply_html(message,
                                       disable_web_page_preview=True)
             except Exception as error:
-                logger.error(messages.new_exception.format(
+                logging.error(messages.NEW_EXCEPTION.format(
                     info.chat.username,
                     input_message,
                     error), exc_info=True)
             finally:
-                dig_output = domain.dig_tg_message(record_type)
+                dig_output = await domain.dig_tg_message(record_type)
                 reply_markup = None
                 if len(domain.domain) <= MAX_DOMAIN_LEN_TO_BUTTONS:
                     reply_markup = InlineKeyboardMarkup.from_row(
@@ -122,19 +120,24 @@ class WDTelegramBot:
                     reply_markup=reply_markup
                 )
 
+    def _collect_bot_handlers(self):
+        """Adds bot handlers to telegram application instance."""
+        self.application.add_handlers(
+            (
+                CommandHandler(['start', 'help'], self.command_help),
+                MessageHandler(filters.TEXT, self.wd_main),
+                CallbackQueryHandler(self.dig_buttons)
+            )
+        )
+
     def run_telegram_pooling(self) -> None:
-        """Create telegram handlers and start pooling."""
-        logger.info('Start pooling')
-        self.application.add_handler(CommandHandler(
-            ['start', 'help'], self.command_help))
-        self.application.add_handler(MessageHandler(
-            filters.TEXT, self.wd_main))
-        self.application.add_handler(CallbackQueryHandler(self.dig_buttons))
-        application.run_polling()
+        """Collects telegram handlers and starts pooling."""
+        self._collect_bot_handlers()
+        self.application.run_polling()
 
 
 if __name__ == '__main__':
-    logger = configure_tg_bot_logging()
+    configure_logging()
     application = Application.builder().token(TOKEN).build()
     wd_bot = WDTelegramBot(application)
     wd_bot.run_telegram_pooling()

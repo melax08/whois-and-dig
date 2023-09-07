@@ -1,19 +1,30 @@
 import os
-from typing import List
+from typing import Tuple
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
-TOKEN: str = os.getenv('TOKEN')
-DNS_SERVERS: List[str] = os.getenv(
-    'DNS_SERVERS', default='8.8.8.8 1.1.1.1').split()
-ALLOWED_RECORDS: List[str] = os.getenv(
+# WD Constants
+
+DNS_SERVERS: Tuple[str] = tuple(os.getenv(
+    'DNS_SERVERS', default='8.8.8.8 1.1.1.1').split())
+
+ALLOWED_RECORDS: Tuple[str] = tuple(os.getenv(
     'ALLOWED_RECORDS',
     default='TXT A MX CNAME AAAA SOA DNAME DS NS SRV PTR CAA TLSA'
-).split()
+).split())
+
 DEFAULT_TYPE: str = os.getenv('DEFAULT_TYPE', default='A')
+
+DIG_TIMEOUT: int = 3
+
+SHELL_OUTPUT_ENCODING: str = 'utf-8'
+
+# Telegram bot constants
+
+TOKEN: str = os.getenv('TOKEN')
 
 # Max callback_data len is 64 bytes (len of domain + ' CNAME' should be <= 64).
 # https://core.telegram.org/bots/api#inlinekeyboardbutton
-MAX_DOMAIN_LEN_TO_BUTTONS = 58
+MAX_DOMAIN_LEN_TO_BUTTONS: int = 58

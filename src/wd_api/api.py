@@ -15,14 +15,14 @@ def dig_settings():
 
 
 @router.post('/dig', tags=['dig'])
-def dig_api(request_data: DomainDig):
+async def dig_api(request_data: DomainDig):
     """Allows to get DIG information about domain."""
     try:
         domain = Domain(request_data.domain)
         dns = request_data.dns
         if isinstance(request_data.dns, str):
             dns = [dns]
-        dig_output = domain.dig(request_data.record, dns)
+        dig_output = await domain.dig(request_data.record, dns)
         return dig_output
     except BadDomain:
         return {'message': 'Bad domain', 'result': False}
