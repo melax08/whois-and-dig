@@ -30,6 +30,18 @@ DIG_RECORD_AT_NS = '\n▫ {} at {}:'
 WHOIS_TG_LABEL = '🔍 Here is whois information:'
 NO_QUERY = 'No entries found for the selected source'
 WHOIS_ERROR = '❗ Whois error: {}. Trying to dig...'
+WHOIS_ITEM = '{:20}{}'
+
+# Whois items labels
+PUNYCODE = 'Punycode:'
+DOMAIN = 'Domain:'
+NAMESERVER = 'Nserver:'
+REGISTRAR = 'Registrar:'
+CREATED = 'Created:'
+EXPIRES = 'Expires:'
+ACTIVE = ' - active!'
+EXPIRED = '<b> - EXPIRED! 🛑</b>'
+STATUSES = 'Statuses:'
 
 # Logging messages
 SOMEONE_STARTS_BOT = 'Someone starts bot: {}, {} {}, {}'

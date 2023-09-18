@@ -51,34 +51,37 @@ class Domain:
         whois_information = [messages.WHOIS_TG_LABEL]
 
         if decoded_domain != self.domain:
-            whois_information.append(
-                f'{"Punycode:":20}<code>{self.domain}</code>')
+            whois_information.append(messages.WHOIS_ITEM.format(
+                messages.PUNYCODE, f'<code>{self.domain}</code>'))
 
-        whois_information.append(
-            f'{"Domain:":20}{self.domain_decode(query.name)}')
+        whois_information.append(messages.WHOIS_ITEM.format(
+            messages.DOMAIN, self.domain_decode(query.name)))
 
         whois_information.extend(
-            [f'{"Nserver:":20}{ns}' for ns in query.name_servers])
+            [messages.WHOIS_ITEM.format(messages.NAMESERVER, ns)
+             for ns in query.name_servers]
+        )
 
         if query.registrar:
-            whois_information.append(f'{"Registrar:":20}{query.registrar}')
+            whois_information.append(messages.WHOIS_ITEM.format(
+                messages.REGISTRAR, query.registrar))
 
         if query.creation_date:
-            whois_information.append(
-                f'{"Created:":20}{query.creation_date}')
+            whois_information.append(messages.WHOIS_ITEM.format(
+                messages.CREATED, query.creation_date))
 
         if query.expiration_date:
+            expiration_string = messages.WHOIS_ITEM.format(
+                messages.EXPIRES, query.expiration_date)
             if datetime.datetime.utcnow() < query.expiration_date:
-                whois_information.append(
-                    f'{"Expires:":20}{query.expiration_date} - active!')
+                expiration_string += messages.ACTIVE
             else:
-                whois_information.append(
-                    f'{"Expires:":20}{query.expiration_date}'
-                    f'<b> - EXPIRED! 🛑</b>'
-                )
+                expiration_string += messages.EXPIRED
+            whois_information.append(expiration_string)
 
         if query.status:
-            whois_information.append(f'{"Statuses:":20}{query.status}')
+            whois_information.append(messages.WHOIS_ITEM.format(
+                messages.STATUSES, query.status))
 
         return '\n'.join(whois_information)
 
