@@ -3,6 +3,7 @@ import whois
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (Application, CommandHandler, MessageHandler,
                           filters, ContextTypes, CallbackQueryHandler)
+from telegram.error import BadRequest
 
 import messages
 from exceptions import BadDomain
@@ -34,11 +35,15 @@ class WDTelegramBot:
         domain, record = query.data.split()
         domain = Domain(domain)
         dig_output = await domain.dig_tg_message(record)
-        await query.edit_message_text(
-            text=dig_output,
-            reply_markup=InlineKeyboardMarkup.from_row(
-                self.create_dig_keyboard(str(domain)))
-        )
+        await query.answer()
+        try:
+            await query.edit_message_text(
+                text=dig_output,
+                reply_markup=InlineKeyboardMarkup.from_row(
+                    self.create_dig_keyboard(str(domain)))
+            )
+        except BadRequest:
+            pass
 
     @staticmethod
     async def command_help(update: Update, context: ContextTypes.context
