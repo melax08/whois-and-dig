@@ -3,27 +3,31 @@
 ## Information
 
 ### Description
-This project contains various handy representations of domain analysis utilities such as whois and dig.
+This project contains various handy representations of domain analysis utilities such as [whois](https://en.wikipedia.org/wiki/WHOIS) and [dig](https://en.wikipedia.org/wiki/Dig_(command)).
 ### Content
-1. Whois & Dig telegram bot.
-2. Whois & Dig REST API
-3. Dockerfiles to easy create docker images for both of bot and API.
+1. Whois & Dig telegram bot;
+2. Whois & Dig REST API;
+3. Dockerfiles and docker-compose file for run bot or API in docker containers.
 
 ### System requirements:
 
 * Python: 3.7+
 * Operating system: Linux or MacOS
-* Installed whois and dig (dnsutils) programs
+* Installed whois and dig (`dnsutils`) programs
 * Docker (19.03.0+) with docker compose for easy run API
 
 ### Tech stack:
+[![Python][Python-badge]][Python-url]
+[![Docker][Docker-badge]][Docker-url]
+
 For bot: 
-* python-telegram-bot as telegram API interface. 
+
+[![Python-telegram-bot][Python-telegram-bot-badge]][Python-telegram-bot-url]
 
 For API: 
-* FastAPI as API backend; 
-* Uvicorn as ASGI server; 
-* Nginx as web-server.
+
+[![FastAPI][FastAPI-badge]][FastAPI-url]
+[![Nginx][Nginx-badge]][Nginx-url]
 
 ## Whois & Dig telegram bot
 
@@ -33,18 +37,15 @@ For API:
 <summary>
 Instruction
 </summary>
+<br>
 
 Clone the repo and change directory to it:
 
 ```
-git clone https://github.com/melax08/whois-and-dig.git
+git clone https://github.com/melax08/whois-and-dig.git && cd whois-and-dig
 ```
 
-```
-cd whois-and-dig
-```
-
-Create and activate virtual environment:
+Create and activate a virtual environment:
 
 ```
 python3 -m venv venv
@@ -54,17 +55,13 @@ python3 -m venv venv
 source venv/bin/activate
 ```
 
-Install python dependencies from the file requirements.txt:
+Install python dependencies from the file `requirements.txt`:
 
 ```
-python3 -m pip install --upgrade pip
+python3 -m pip install --upgrade pip && pip install -r requirements.txt
 ```
 
-```
-pip install -r requirements.txt
-```
-
-Create .env file and add your telegram bot token to it (see .env_example):
+Create `.env` file and add your telegram bot token to it (see `.env_example`):
 
 ```
 echo 'TOKEN=HERE-IS-YOUR-TELEGRAM-TOKEN' > src/.env
@@ -85,24 +82,21 @@ python3 src/wd_telegram_bot.py
 <summary>
 Instruction
 </summary>
+<br>
 
 Clone the repo and change directory to it:
 
 ```
-git clone https://github.com/melax08/whois-and-dig.git
+git clone https://github.com/melax08/whois-and-dig.git && cd whois-and-dig
 ```
 
-```
-cd whois-and-dig
-```
-
-Create .env file and add your telegram bot token to it (see .env_example):
+Create `.env` file and add your telegram bot token to it (see `.env_example`):
 
 ```
 echo 'TOKEN=HERE-IS-YOUR-TELEGRAM-TOKEN' > src/.env
 ```
 
-Build the image by Dockerfile.bot:
+Build the docker image by `Dockerfile.bot`:
 ```
 docker build -t wd_tg_bot -f Dockerfile.bot .
 ```
@@ -126,25 +120,30 @@ Example of tg bot conversation:
 <summary>
 Instruction
 </summary>
+<br>
 
 1. Clone the repo and change directory to api_docker dir in it:
 
-```
-git clone https://github.com/melax08/whois-and-dig.git
+```shell
+git clone https://github.com/melax08/whois-and-dig.git && cd whois-and-dig/api_docker
 ```
 
-```
-cd whois-and-dig/api_docker
-```
-2. Fill up the .env file, like .env_example file:
+2. Fill up the `.env` file, like `.env_example` file:
 
-```
+```shell
 mv .env_example .env
 nano .env
 ```
+
 3. Run docker-compose:
-```
+```shell
 docker-compose up -d
+```
+
+or 
+
+```shell
+docker compose up -d
 ```
 
 </details>
@@ -152,27 +151,39 @@ docker-compose up -d
 ### API usage:
 With default nginx config, API runs on http://127.0.0.1.
 
-If you want the api to work on a dedicated ip address, or on a domain, change the directive **server_name** in **api_docker/nginx/default.conf** file.
+If you want the api to work on a dedicated ip address, or on a domain, change the directive `server_name` in `api_docker/nginx/default.conf` file.
 
-In a running application, you can find the **swagger documentation** along the path: http://127.0.0.1/docs
+In a running application, you can find the `swagger documentation` along the path: http://127.0.0.1/docs
 
 ### Example of requests to the working API:
 
 Get dig settings like default type or allowed records:
 ```shell
-curl -X GET http://127.0.0.1/api/v1/dig/settings/
+curl -X GET http://127.0.0.1/api/v1/dig/settings
 ```
 
 Get dig information about A-records on domain google.com on DNS-servers 1.1.1.1 and 8.8.8.8
 ```shell
-curl -X POST http://127.0.0.1/api/v1/dig/ \
+curl -X POST http://127.0.0.1/api/v1/dig \
 -H "Content-Type: application/json" \
 -d '{"domain": "google.com", "record": "A", "dns": ["1.1.1.1", "8.8.8.8"]}'
 ```
 
 Get whois information about domain google.com:
 ```shell
-curl -X POST http://127.0.0.1/api/v1/whois/ \
+curl -X POST http://127.0.0.1/api/v1/whois \
 -H "Content-Type: application/json" \
 -d '{"domain": "google.com"}'
 ```
+
+<!-- MARKDOWN LINKS & BADGES -->
+[Python-url]: https://www.python.org/
+[Python-badge]: https://img.shields.io/badge/Python-376f9f?style=for-the-badge&logo=python&logoColor=white
+[Python-telegram-bot-badge]: https://img.shields.io/badge/python--telegram--bot-4b8bbe?style=for-the-badge
+[Python-telegram-bot-url]: https://github.com/python-telegram-bot/python-telegram-bot
+[FastAPI-url]: https://fastapi.tiangolo.com
+[FastAPI-badge]: https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi
+[Docker-url]: https://www.docker.com
+[Docker-badge]: https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white
+[Nginx-badge]: https://img.shields.io/badge/nginx-%23009639.svg?style=for-the-badge&logo=nginx&logoColor=white
+[Nginx-url]: https://www.nginx.com/
