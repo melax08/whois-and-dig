@@ -1,4 +1,6 @@
+from typing import Tuple
 import logging
+
 import whois
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (Application, CommandHandler, MessageHandler,
@@ -6,13 +8,15 @@ from telegram.ext import (Application, CommandHandler, MessageHandler,
 from telegram.error import BadRequest
 
 import messages
-from exceptions import BadDomain
+from exceptions import BadDomain, BotWrongInput
 from wd import Domain, DEFAULT_TYPE
 from logger import configure_logging
-from constants import TOKEN, MAX_DOMAIN_LEN_TO_BUTTONS
+from constants import TOKEN, MAX_DOMAIN_LEN_TO_BUTTONS, RECORDS_ON_KEYBOARD
 
 
 class WDTelegramBot:
+    MAX_INPUT_ARGUMENTS: int = 2
+
     def __init__(self, application) -> None:
         self.application = application
 
@@ -20,12 +24,8 @@ class WDTelegramBot:
     def create_dig_keyboard(domain: str) -> list:
         """Create InlineKeyboard buttons for dig message."""
         keyboard = [
-            InlineKeyboardButton("A", callback_data=f"{domain} A"),
-            InlineKeyboardButton("AAAA", callback_data=f"{domain} AAAA"),
-            InlineKeyboardButton("CNAME", callback_data=f"{domain} CNAME"),
-            InlineKeyboardButton("TXT", callback_data=f"{domain} TXT"),
-            InlineKeyboardButton("MX", callback_data=f"{domain} MX"),
-            InlineKeyboardButton("SOA", callback_data=f"{domain} SOA"),
+            InlineKeyboardButton(record, callback_data=f"{domain} {record}")
+            for record in RECORDS_ON_KEYBOARD
         ]
         return keyboard
 
@@ -46,6 +46,24 @@ class WDTelegramBot:
             pass
 
     @staticmethod
+    async def error_handler(
+            update: Update, context: ContextTypes.DEFAULT_TYPE
+    ) -> None:
+        """Log the error and send a telegram message to notify the current user
+        about the problem."""
+        logging.error(
+            messages.NEW_EXCEPTION.format(
+                update.effective_chat.username,
+                update.message.text
+            ),
+            exc_info=context.error
+        )
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=messages.INTERNAL_ERROR
+        )
+
+    @staticmethod
     async def command_help(update: Update, context: ContextTypes.context
                            ) -> None:
         """Send help information with telegram command handler."""
@@ -55,79 +73,102 @@ class WDTelegramBot:
                 chat.username, chat.first_name, chat.last_name, chat.id))
         await update.message.reply_html(messages.HELP_TEXT)
 
+    def __get_domain_and_record(self, input_message: str) -> Tuple[str, str]:
+        """
+        Gets a domain and a record from the inputted message by user.
+        - Examples of correct user inputs:
+        example.com A
+        example.com
+        - Example of wrong user input:
+        example.com A TXT MX
+        """
+        input_message = input_message.split()
+        if not input_message or len(input_message) > self.MAX_INPUT_ARGUMENTS:
+            raise BotWrongInput
+
+        if len(input_message) != self.MAX_INPUT_ARGUMENTS:
+            input_message.append(DEFAULT_TYPE)
+
+        domain, record = input_message
+        return domain, record
+
+    @staticmethod
+    async def __send_whois_information(update_message, domain: Domain) -> None:
+        """Trying to make a whois query and sends the user message with
+        result."""
+        try:
+            whois_output = domain.whois_tg_message()
+            await update_message.reply_html(whois_output,
+                                            disable_web_page_preview=True)
+        except whois.exceptions.UnknownTld as error:
+            logging.info(messages.ERROR_LOG.format(
+                update_message.chat.username,
+                update_message.text,
+                error))
+            await update_message.reply_html(messages.UNKNOWN_TLD,
+                                            disable_web_page_preview=True)
+        except (
+                whois.exceptions.WhoisPrivateRegistry,
+                whois.exceptions.FailedParsingWhoisOutput,
+                whois.exceptions.WhoisCommandFailed
+        ) as error:
+            logging.info(messages.ERROR_LOG.format(
+                update_message.chat.username,
+                update_message.text,
+                error))
+            message = messages.WHOIS_ERROR.format(str(error).rstrip())
+            await update_message.reply_html(message,
+                                            disable_web_page_preview=True)
+
+    async def __send_dig_information(
+            self, update_message, domain: Domain, record: str
+    ) -> None:
+        """Trying to make a dig query and sends the user message with
+        result."""
+        dig_output = await domain.dig_tg_message(record)
+
+        reply_markup = None
+        if len(domain.domain) <= MAX_DOMAIN_LEN_TO_BUTTONS:
+            reply_markup = InlineKeyboardMarkup.from_row(
+                self.create_dig_keyboard(str(domain)))
+
+        await update_message.reply_html(
+            dig_output,
+            disable_web_page_preview=True,
+            reply_markup=reply_markup
+        )
+
     async def wd_main(
             self, update: Update, context: ContextTypes.context) -> None:
-        """Main function for handle user requests and return whois&dig info."""
+        """
+        The main function for handle user message requests and return
+        Whois & Dig information.
+        If message not new (was edited the old message), makes only dig query.
+        """
         info = update.message
         if update.edited_message:
             info = update.edited_message
-        input_message = info.text.split()
-        domain = input_message[0]
-        if len(input_message) == 2:
-            record_type = input_message[1]
-        elif len(input_message) == 1:
-            record_type = DEFAULT_TYPE
-        else:
-            await info.reply_html(messages.WRONG_REQUEST)
-            return
 
         try:
+            domain, record_type = self.__get_domain_and_record(info.text)
             domain = Domain(domain)
+        except BotWrongInput:
+            await info.reply_html(messages.WRONG_REQUEST)
         except BadDomain as error:
             logging.info(messages.ERROR_LOG.format(
                 info.chat.username,
-                input_message,
+                info.text,
                 messages.BAD_DOMAIN_LOG))
             await info.reply_text(str(error))
-        except Exception as error:
-            logging.error(messages.NEW_EXCEPTION.format(
-                info.chat.username,
-                input_message,
-                error), exc_info=True)
         else:
-            try:
-                if not update.edited_message:
-                    whois_output = domain.whois_tg_message()
-                    await info.reply_html(whois_output,
-                                          disable_web_page_preview=True)
-            except whois.exceptions.UnknownTld as error:
-                logging.info(messages.ERROR_LOG.format(
-                    info.chat.username,
-                    input_message,
-                    error))
-                await info.reply_html(messages.UNKNOWN_TLD,
-                                      disable_web_page_preview=True)
-            except (
-                    whois.exceptions.WhoisPrivateRegistry,
-                    whois.exceptions.FailedParsingWhoisOutput,
-                    whois.exceptions.WhoisCommandFailed
-            ) as error:
-                logging.info(messages.ERROR_LOG.format(
-                    info.chat.username,
-                    input_message,
-                    error))
-                message = messages.WHOIS_ERROR.format(str(error).rstrip())
-                await info.reply_html(message,
-                                      disable_web_page_preview=True)
-            except Exception as error:
-                logging.error(messages.NEW_EXCEPTION.format(
-                    info.chat.username,
-                    input_message,
-                    error), exc_info=True)
-            finally:
-                dig_output = await domain.dig_tg_message(record_type)
-                reply_markup = None
-                if len(domain.domain) <= MAX_DOMAIN_LEN_TO_BUTTONS:
-                    reply_markup = InlineKeyboardMarkup.from_row(
-                        self.create_dig_keyboard(str(domain)))
-                await info.reply_html(
-                    dig_output,
-                    disable_web_page_preview=True,
-                    reply_markup=reply_markup
-                )
+            if not update.edited_message:
+                await self.__send_whois_information(info, domain)
+
+            await self.__send_dig_information(info, domain, record_type)
 
     def _collect_bot_handlers(self):
         """Adds bot handlers to telegram application instance."""
+        self.application.add_error_handler(self.error_handler)
         self.application.add_handlers(
             (
                 CommandHandler(['start', 'help'], self.command_help),

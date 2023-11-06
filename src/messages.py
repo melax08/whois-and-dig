@@ -13,6 +13,10 @@ HELP_TEXT = (
     'example.com A TXT MX\n\n'
     f'Allowed <b>dig</b> records to check: {", ".join(ALLOWED_RECORDS)}'
 )
+INTERNAL_ERROR = (
+    '‼️ Возникла внутренняя проблема при обработке запроса. '
+    'Попробуйте повторить данное действие позже.'
+)
 
 # Domain problems
 BAD_DOMAIN = '❗ Bad domain. Maybe you need some /help?'
@@ -47,6 +51,6 @@ STATUSES = 'Statuses:'
 SOMEONE_STARTS_BOT = 'Someone starts bot: {}, {} {}, {}'
 ERROR_LOG = 'User: {}. Input message: {}. Error: {}'
 NEW_EXCEPTION = (
-    'New exception was happened. User: {}. Input message: {} Error: {}'
+    'New exception was happened. User: {}. Input message: {} Error:'
 )
 BAD_DOMAIN_LOG = 'Bad domain'

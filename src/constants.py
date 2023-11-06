@@ -17,6 +17,10 @@ ALLOWED_RECORDS: Tuple[str] = tuple(os.getenv(
 
 DEFAULT_TYPE: str = os.getenv('DEFAULT_TYPE', default='A')
 
+RECORDS_ON_KEYBOARD: Tuple[str, ...] = (
+    'A', 'AAAA', 'CNAME', 'TXT', 'MX', 'SOA'
+)
+
 DIG_TIMEOUT: int = 3
 
 SHELL_OUTPUT_ENCODING: str = 'utf-8'

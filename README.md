@@ -12,7 +12,7 @@ This project contains various handy representations of domain analysis utilities
 ### System requirements:
 
 * Python: 3.7+
-* Operating system: Linux or MacOS
+* Operating system: Linux or macOS
 * Installed whois and dig (`dnsutils`) programs
 * Docker (19.03.0+) with docker compose for easy run API
 
