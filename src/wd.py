@@ -22,22 +22,26 @@ class Domain:
     DIG_QUERY_COLUMN: int = 4
 
     def __init__(self, raw_site: str) -> None:
-        self.raw_site = raw_site
-        self.domain = self.domain_getter()
+        self.domain = raw_site
 
     def __str__(self):
         return self.domain
 
-    def domain_getter(self) -> str:
-        """Looks up the domain in the provided string. Returns it if found."""
-        domain = self.raw_site.lower()
+    @property
+    def domain(self) -> str:
+        return self.__domain
+
+    @domain.setter
+    def domain(self, input_site: str) -> None:
+        """Lookup for domain name in inputted string, raise the `BadDomain`
+        exception if no domain in the string."""
+        domain = input_site.lower()
         domain = re.search(self.DOMAIN_REGEXP, domain)
 
         if not domain:
             raise BadDomain(messages.BAD_DOMAIN)
 
-        domain = self.domain_encode(domain.group())
-        return domain
+        self.__domain = self.domain_encode(domain.group())
 
     def whois_tg_message(self) -> str:
         """Gets whois information about domain, then creates the telegram
