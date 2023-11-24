@@ -61,10 +61,11 @@ Install python dependencies from the file `requirements.txt`:
 python3 -m pip install --upgrade pip && pip install -r requirements.txt
 ```
 
-Create `.env` file and add your telegram bot token to it (see `.env_example`):
+Copy file `.env.example` to `.env` and fill it in:
 
-```
-echo 'TOKEN=HERE-IS-YOUR-TELEGRAM-TOKEN' > src/.env
+```shell
+cp .env.example .env
+nano .env
 ```
 
 Start the bot:
@@ -90,10 +91,11 @@ Clone the repo and change directory to it:
 git clone https://github.com/melax08/whois-and-dig.git && cd whois-and-dig
 ```
 
-Create `.env` file and add your telegram bot token to it (see `.env_example`):
+Copy file `.env.example` to `.env` and fill it in:
 
-```
-echo 'TOKEN=HERE-IS-YOUR-TELEGRAM-TOKEN' > src/.env
+```shell
+cp .env.example .env
+nano .env
 ```
 
 Build the docker image by `Dockerfile.bot`:
@@ -102,7 +104,7 @@ docker build -t wd_tg_bot -f Dockerfile.bot .
 ```
 Create and run docker container:
 ```
-docker run -it -d -v ${PWD}/logs:/app/logs --name wd_tg_bot wd_tg_bot
+docker run -it --restart always -d -v ${PWD}/logs:/app/logs --name wd_tg_bot wd_tg_bot
 ```
 
 </details>
@@ -125,24 +127,20 @@ Instruction
 1. Clone the repo and change directory to api_docker dir in it:
 
 ```shell
-git clone https://github.com/melax08/whois-and-dig.git && cd whois-and-dig/api_docker
+git clone https://github.com/melax08/whois-and-dig.git && cd whois-and-dig
 ```
 
-2. Fill up the `.env` file, like `.env_example` file:
+2. Copy file `.env.example` to `.env` and fill it in:
 
 ```shell
-mv .env_example .env
+cp .env.example .env
 nano .env
 ```
 
-3. Run docker-compose:
-```shell
-docker-compose up -d
-```
-
-or 
+3. Go to `api_docker` dir and run docker-compose:
 
 ```shell
+cd api_docker
 docker compose up -d
 ```
 

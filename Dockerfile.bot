@@ -1,5 +1,6 @@
 # This Dockerfile is needed to create the image of whois & dig telegram bot.
 # docker build -t wd_tg_bot -f Dockerfile.bot .
+# docker run -it --restart always -d -v ${PWD}/logs:/app/logs --name wd_tg_bot wd_tg_bot
 
 FROM python:3.11-slim
 
@@ -8,7 +9,7 @@ ENV PYTHONUNBUFFERED 1
 
 WORKDIR /app
 
-COPY requirements_bot.txt src .
+COPY .env requirements_bot.txt src .
 
 RUN pip3 install --upgrade pip
 RUN pip3 install -r  /app/requirements_bot.txt --no-cache-dir

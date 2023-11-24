@@ -51,16 +51,20 @@ class WDTelegramBot:
     ) -> None:
         """Log the error and send a telegram message to notify the current user
         about the problem."""
+        username = text = None
+
+        if update is not None:
+            username = update.effective_chat.username
+            text = update.message.text
+
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=messages.INTERNAL_ERROR
+            )
+
         logging.error(
-            messages.NEW_EXCEPTION.format(
-                update.effective_chat.username,
-                update.message.text
-            ),
+            messages.NEW_EXCEPTION.format(username, text),
             exc_info=context.error
-        )
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=messages.INTERNAL_ERROR
         )
 
     @staticmethod
